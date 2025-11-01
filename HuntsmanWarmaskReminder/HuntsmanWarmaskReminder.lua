@@ -4,9 +4,9 @@
 --[[
     AddOn Name:         HuntsmanWarmaskReminder
     Description:        Warns when Huntsman Warmask is equipped but buff is missing in combat
-    Version:            1.0.0
+    Version:            1.1.0
     Author:             VollständigerName
-    Dependencies:       None
+    Dependencies:       LibAddonMenu-2.0
 --]]
 -- =============================================================================
 --[[
@@ -30,10 +30,19 @@
 --]]
 HuntsmanWarmaskReminder = {
     name = "HuntsmanWarmaskReminder",
-    version = "1.0.1",
+    version = "1.1.0",
     settings = {
         enabled = true,  -- Default: reminder enabled
-        debugMode = false  -- Default: debug disabled
+        debugMode = false,  -- Default: debug disabled
+        showOutsideCombat = false,
+        toggleTimer = true,
+        toggleWarning = false,
+        LockPosition = true,
+        position = {
+            point = CENTER,
+            relativeTo = GuiRoot,
+            relativePoint = CENTER,
+            x = 128, y = 128 },
     }
 }
 
@@ -61,8 +70,11 @@ local REMINDER_COOLDOWN = 1000 -- 1 second in milliseconds
 -- == RUNTIME VARIABLE DECLARATIONS ============================================
 -- =============================================================================
 local lastReminderTime = 0
+local cdTimer = 0
+local remainingTime = 0
 local isInCombat = false
 local reminderControl = nil
+local reminderControlWarning = nil
 local hasWarmaskEquipped = false
 
 -- =============================================================================
@@ -96,20 +108,47 @@ end
 local function CreateWarningUI()
     Debug("Creating warning UI...")
     
-    -- Main warning container
     reminderControl = WINDOW_MANAGER:CreateTopLevelWindow(NAME .. "Warning")
-    reminderControl:SetDimensions(600, 80)
-    reminderControl:SetAnchor(CENTER, GuiRoot, CENTER, 0, 0)
+    reminderControl:SetDimensions(120, 120)
     reminderControl:SetDrawTier(DT_HIGH)
-    reminderControl:SetHidden(true)
+    reminderControl:SetClampedToScreen(true)
+    reminderControl:SetMouseEnabled(true)
+    reminderControl:SetMovable(true)
+    reminderControl:SetHidden(false)
     
+    reminderControl:ClearAnchors()
+    reminderControl:SetAnchor(HWR.settings.position.point, HWR.settings.position.relativeTo, HWR.settings.position.relativePoint, HWR.settings.position.x, HWR.settings.position.y)
+
+
+    reminderControlWarning = WINDOW_MANAGER:CreateTopLevelWindow(NAME .. "WarningMiddle")
+    reminderControlWarning:SetDimensions(600, 80)
+    reminderControlWarning:SetAnchor(CENTER, GuiRoot, CENTER, 0, 0)
+    reminderControlWarning:SetDrawTier(DT_HIGH)
+    reminderControlWarning:SetHidden(true)
+
+        -- Icon
+    warningIcon = WINDOW_MANAGER:CreateControl("$(parent)Icon", reminderControl, CT_TEXTURE)
+    warningIcon:SetAnchor(CENTER, reminderControl, CENTER, 0, 0)
+    warningIcon:SetDimensions(80, 80)
+    warningIcon:SetTexture("/esoui/art/icons/gear_hircinessnarlmask_head_a.dds")
+    warningIcon:SetHidden(false)
+
+    -- Text
+    warningTimer = WINDOW_MANAGER:CreateControl("$(parent)Text", reminderControl, CT_LABEL)
+    warningTimer:SetFont("ZoFontWinH1")
+    warningTimer:SetAnchor(CENTER, reminderControl, CENTER, 0, 30)
+    warningTimer:SetHorizontalAlignment(TEXT_ALIGN_CENTER)
+    warningTimer:SetVerticalAlignment(TEXT_ALIGN_CENTER)
+    warningTimer:SetColor(1, 1, 1, 1)
+    warningTimer:SetText("")
+
     -- Warning text label
-    local warningText = WINDOW_MANAGER:CreateControl("$(parent)Text", reminderControl, CT_LABEL)
+    warningText = WINDOW_MANAGER:CreateControl("$(parent)Text", reminderControlWarning, CT_LABEL)
     warningText:SetFont("ZoFontWinH1")
     warningText:SetColor(1, 0.2, 0.2, 1) -- Red color for urgency
     warningText:SetText(">>> HUNTSMAN WARMASK MISSING! <<<")
     warningText:SetDimensions(580, 60)
-    warningText:SetAnchor(CENTER, reminderControl, CENTER, 0, 0)
+    warningText:SetAnchor(CENTER, reminderControlWarning, CENTER, 0, 0)
     warningText:SetHorizontalAlignment(TEXT_ALIGN_CENTER)
     warningText:SetVerticalAlignment(TEXT_ALIGN_CENTER)
     
@@ -129,8 +168,8 @@ end
 local function ShowWarning()
     if reminderControl then
         Debug("Showing warning.")
-        reminderControl:SetHidden(false)
-        reminderControl:SetAlpha(1)
+        reminderControlWarning:SetHidden(false)
+        reminderControlWarning:SetAlpha(1)
     else
         Debug("ERROR: reminderControl is nil!")
     end
@@ -144,12 +183,20 @@ end
       2. Hides the control
 --]]
 local function HideWarning()
-    if reminderControl then
+    if reminderControlWarning then
         Debug("Hiding warning.")
-        reminderControl:SetHidden(true)
+        reminderControlWarning:SetHidden(true)
     end
 end
 
+local function HideIconAndTimer()
+    if reminderControl and warningTimer then
+        reminderControl:SetHidden(true)
+        warningTimer:SetText("")
+        remainingTime = 0
+        cdTimer = 0
+    end
+end
 -- =============================================================================
 -- == EQUIPMENT CHECK SUBSYSTEM ================================================
 -- =============================================================================
@@ -185,7 +232,7 @@ local function HasBuff()
         
         if abilityId == HUNTSMAN_WARMASK_BUFF_ID then
             Debug("Buff found: " .. (buffName or "Unknown") .. " (ID: " .. abilityId .. ")")
-            return true
+            return true, timeEnding - GetFrameTimeSeconds()
         end
     end
     return false
@@ -207,10 +254,21 @@ end
 --]]
 local function CheckConditions()
     Debug("Checking conditions...")
-    
+    local _, point, relativeTo, relativePoint, UserX, UserY = reminderControl:GetAnchor()
+    if UserX ~= HWR.settings.position.x or UserY ~= HWR.settings.position.y then
+        HWR.settings.position.point = point
+        HWR.settings.position.relativeTo = relativeTo
+        HWR.settings.position.relativePoint = relativePoint
+        HWR.settings.position.x = UserX
+        HWR.settings.position.y = UserY
+    end 
+
+    -- d(tostring(HWR.settings.position.x))
+    -- d(tostring(HWR.settings.position.y))
     -- Check if addon is enabled
     if not HWR.settings.enabled then
         HideWarning()
+        HideIconAndTimer()
         return false
     end
     
@@ -218,22 +276,61 @@ local function CheckConditions()
     if not CheckWarmaskEquipped() then
         Debug("Wrong helmet or no helmet")
         HideWarning()
+        HideIconAndTimer()
         return false
     end
     
     -- Check combat state
     Debug("In combat: " .. tostring(isInCombat))
-    if not isInCombat then
+    local inMouseMode = IsGameCameraUIModeActive()
+    if (HWR.settings.LockPosition and inMouseMode) or not isInCombat and not HWR.settings.showOutsideCombat then
         HideWarning()
+        HideIconAndTimer()
         return false
     end
     
     -- Check buff status
-    local hasBuff = HasBuff()
+    local hasBuff,remaining = HasBuff()
     Debug("Buff active: " .. tostring(hasBuff))
-    if hasBuff then
-        HideWarning()
-        return false
+
+    if HWR.settings.toggleWarning then
+        reminderControl:SetHidden(true)
+        if hasBuff then
+            HideWarning()
+            return false
+        else
+            reminderControl:SetHidden(true)
+        end
+    else
+        if hasBuff then
+            remainingTime = remaining
+            reminderControl:SetHidden(false)
+
+            if HWR.settings.toggleTimer then
+                warningTimer:SetColor(0, 1, 0, 1) 
+                warningTimer:SetText(string.format("%d", remaining))
+            else
+                warningTimer:SetText("")
+                remainingTime = 0
+                cdTimer = 0
+            end
+        elseif (isInCombat or HWR.settings.showOutsideCombat) and remainingTime <=50 then
+            remainingTime = 0
+            cdTimer = 0
+            reminderControl:SetHidden(false)
+            warningTimer:SetColor(1, 1, 1, 1) 
+            warningTimer:SetText("Bash")
+        elseif remainingTime > 50 and cdTimer <=10 then
+            cdTimer = 10-(60-remainingTime)
+            remainingTime = remainingTime-0.2
+            reminderControl:SetHidden(false)
+            warningTimer:SetColor(1, 0.2, 0.2, 1) 
+            warningTimer:SetText(string.format("%d", cdTimer-0.2))
+        else
+            remainingTime = 0
+            cdTimer = 0
+            reminderControl:SetHidden(true)
+        end
     end
     
     -- Check cooldown
@@ -249,7 +346,9 @@ local function CheckConditions()
     -- All conditions met - show warning
     Debug("All conditions met - showing warning")
     lastReminderTime = currentTime
-    ShowWarning()
+    if HWR.settings.toggleWarning then
+        ShowWarning()
+    end
     return true
 end
 
@@ -267,6 +366,7 @@ end
 local function ContinuousUpdate()
     if HWR.settings.enabled and isInCombat and hasWarmaskEquipped then
         CheckConditions()
+
     end
 end
 
@@ -284,9 +384,10 @@ end
 local function OnCombatState(eventCode, inCombat)
     isInCombat = inCombat
     Debug("Combat status: " .. (inCombat and "In combat" or "Not in combat"))
-    
-    if not inCombat then
+    local inMouseMode = IsGameCameraUIModeActive()
+    if (HWR.settings.LockPosition and inMouseMode) or not inCombat and not HWR.settings.showOutsideCombat then
         HideWarning()
+        HideIconAndTimer()
     else
         CheckConditions()
     end
@@ -312,6 +413,7 @@ local function OnEquipmentChanged(eventCode, bagId, slotId, isNewItem, itemSound
             Debug("No helmet equipped!")
             hasWarmaskEquipped = false
             HideWarning()
+            HideIconAndTimer()
         end
     end
 end
@@ -358,10 +460,45 @@ SLASH_COMMANDS["/huntsmanwarmaskreminder"] = function()
     
     if not HWR.settings.enabled then
         HideWarning()
+        HideIconAndTimer()
     else
         CheckConditions()
     end
 end
+
+-------------------------------------------------------------
+-- Slash Commands
+-------------------------------------------------------------
+local function ToggleAddon()
+    HWR.settings.enabled = not HWR.settings.enabled
+    d("|cFFFFFFHWR:|r " .. (HWR.settings.enabled and "|c00FF00enabled|r" or "|cFF0000disabled|r"))
+end
+
+
+local function ToggleShowOutside()
+    HWR.settings.showOutsideCombat = not HWR.settings.showOutsideCombat
+    d("|cFFFFFFHWR Show Outside Combat:|r " ..
+        (HWR.settings.showOutsideCombat and "|c00FF00ON|r" or "|cFF0000OFF|r"))
+end
+
+
+local function ToggleShowTimer()
+    HWR.settings.toggleTimer = not HWR.settings.toggleTimer
+    d("|cFFFFFFHWR Toggle Timer on Icon:|r " ..
+        (HWR.settings.toggleTimer and "|c00FF00ON|r" or "|cFF0000OFF|r"))
+end
+
+local function ToggleWarning()
+    HWR.settings.toggleWarning = not HWR.settings.toggleWarning
+    d("|cFFFFFFHWR Toggle Warning in the middle on the screen:|r " ..
+        (HWR.settings.toggleWarning and "|c00FF00ON|r" or "|cFF0000OFF|r"))
+end
+SLASH_COMMANDS["/hwr"] = ToggleAddon
+SLASH_COMMANDS["/hwrshow"] = ToggleShowOutside
+SLASH_COMMANDS["/hwrstoggletimer"] = ToggleShowTimer
+SLASH_COMMANDS["/hwrstogglewarning"] = ToggleWarning
+
+
 
 -- =============================================================================
 -- == ADDON INITIALIZATION =====================================================
@@ -400,6 +537,7 @@ function HWR.Initialize()
     CheckWarmaskEquipped()
     CheckConditions()
     
+    HWR.BuildMenu(HWRSV)
     Debug("Addon initialized.")
 end
 
@@ -430,3 +568,4 @@ end
     - EVENT_ADD_ON_LOADED handler for delayed initialization
 --]]
 EM:RegisterForEvent(NAME, EVENT_ADD_ON_LOADED, OnAddOnLoaded)
+

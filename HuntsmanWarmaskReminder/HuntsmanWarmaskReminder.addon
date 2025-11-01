@@ -1,12 +1,13 @@
 ## Title: |cFF0000HuntsmanWarmask|rReminder
-## APIVersion: 101047 101048
-## Author: |cEBD03CVollständigerName|r
-## Version: 1.0.0
+## APIVersion: 101048
+## Author: |cEBD03CVollständigerName|r & |c8A2BE2Orollas|r 
+## Version: 1.1.0
 ## SavedVariables: HuntsmanWarmaskReminderSV
-## OptionalDependsOn: 
+## DependsOn: LibAddonMenu-2.0>=41
 ## Description: Warns when Huntsman Warmask is equipped but buff is missing in combat. Usage: /huntsmanwarmaskreminder
 
 HuntsmanWarmaskReminder.lua
+HWRMenu.lua
 
 ## Notes: This add-on is not created by, affiliated with, or supported by ZeniMax Media Inc. 
 ##        The Elder Scrolls® and related logos are registered trademarks or trademarks 
