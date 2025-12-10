@@ -4,7 +4,7 @@
 -- AddOn Name:        HuntsmanWarmaskReminder
 -- Description:       configuration menu system
 -- Authors:           Orollas & VollständigerName
--- Version:           1.1.0
+-- Version:           1.1.1
 -- Dependencies:      LibAddonMenu-2.0
 -- =============================================================================
 -- =============================================================================

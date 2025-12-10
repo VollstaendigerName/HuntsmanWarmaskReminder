@@ -4,7 +4,7 @@
 --[[
     AddOn Name:         HuntsmanWarmaskReminder
     Description:        Warns when Huntsman Warmask is equipped but buff is missing in combat
-    Version:            1.1.0
+    Version:            1.1.1
     Author:             VollständigerName
     Dependencies:       LibAddonMenu-2.0
 --]]
@@ -30,7 +30,7 @@
 --]]
 HuntsmanWarmaskReminder = {
     name = "HuntsmanWarmaskReminder",
-    version = "1.1.0",
+    version = "1.1.1",
     settings = {
         enabled = true,  -- Default: reminder enabled
         debugMode = false,  -- Default: debug disabled
@@ -364,7 +364,7 @@ end
       3. Maintains consistent state monitoring
 --]]
 local function ContinuousUpdate()
-    if HWR.settings.enabled and isInCombat and hasWarmaskEquipped then
+    if HWR.settings.showOutsideCombat or (HWR.settings.enabled and isInCombat and hasWarmaskEquipped) then
         CheckConditions()
 
     end
@@ -559,6 +559,9 @@ local function OnAddOnLoaded(event, addonName)
     end
 end
 
+function sceneChange(_, scene) -- Thank you Duesentrieb <3
+    reminderControl:SetHidden(true)
+end
 -- =============================================================================
 -- == EVENT REGISTRATION =======================================================
 -- =============================================================================
@@ -568,4 +571,5 @@ end
     - EVENT_ADD_ON_LOADED handler for delayed initialization
 --]]
 EM:RegisterForEvent(NAME, EVENT_ADD_ON_LOADED, OnAddOnLoaded)
-
+SCENE_MANAGER:GetScene("hud"):RegisterCallback("StateChange", ContinuousUpdate) -- Thank you Duesentrieb <3
+SCENE_MANAGER:GetScene("hudui"):RegisterCallback("StateChange", sceneChange)
