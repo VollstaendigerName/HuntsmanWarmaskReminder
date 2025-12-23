@@ -4,7 +4,7 @@
 --[[
     AddOn Name:         HuntsmanWarmaskReminder
     Description:        Warns when Huntsman Warmask is equipped but buff is missing in combat
-    Version:            1.1.1
+    Version:            1.2.0
     Author:             VollständigerName
     Dependencies:       LibAddonMenu-2.0
 --]]
@@ -30,7 +30,7 @@
 --]]
 HuntsmanWarmaskReminder = {
     name = "HuntsmanWarmaskReminder",
-    version = "1.1.1",
+    version = "1.2.0",
     settings = {
         enabled = true,  -- Default: reminder enabled
         debugMode = false,  -- Default: debug disabled
@@ -38,6 +38,12 @@ HuntsmanWarmaskReminder = {
         toggleTimer = true,
         toggleWarning = false,
         LockPosition = true,
+        timerFontSize = 32,  -- Timer font size (default 32px)
+        warningFontSize = 50, -- Warning font size (default 50px)
+        iconSize = 100, -- 100% 
+        timerColor = { r = 0, g = 1, b = 0, a = 1 },      -- Green timer
+        bashColor = { r = 1, g = 1, b = 1, a = 1 },       -- White bash
+        cooldownColor = { r = 1, g = 0.2, b = 0.2, a = 1 }, -- Red cooldown
         position = {
             point = CENTER,
             relativeTo = GuiRoot,
@@ -94,6 +100,31 @@ local function Debug(message)
 end
 
 -- =============================================================================
+-- == FONT HELPER FUNCTIONS ====================================================
+-- =============================================================================
+--[[
+    Function: GetTimerFont
+    Purpose: Returns formatted font string for timer text
+--]]
+local function GetTimerFont()
+    local fontSize = tonumber(HWR.settings.timerFontSize) or 32
+    local fontPath = "EsoUI/Common/Fonts/univers67.otf"
+    local outline = "soft-shadow-thin"
+    return string.format("%s|%d|%s", fontPath, fontSize, outline)
+end
+
+--[[
+    Function: GetWarningFont
+    Purpose: Returns formatted font string for warning text
+--]]
+local function GetWarningFont()
+    local fontSize = tonumber(HWR.settings.warningFontSize) or 50
+    local fontPath = "EsoUI/Common/Fonts/univers67.otf"
+    local outline = "soft-shadow-thick"
+    return string.format("%s|%d|%s", fontPath, fontSize, outline)
+end
+
+-- =============================================================================
 -- == WARNING UI SUBSYSTEM =====================================================
 -- =============================================================================
 --[[
@@ -108,6 +139,9 @@ end
 local function CreateWarningUI()
     Debug("Creating warning UI...")
     
+    local iconSize = HWR.settings.iconSize or 100
+    local iconDimensions = (iconSize / 100) * 80
+    
     reminderControl = WINDOW_MANAGER:CreateTopLevelWindow(NAME .. "Warning")
     reminderControl:SetDimensions(120, 120)
     reminderControl:SetDrawTier(DT_HIGH)
@@ -119,24 +153,27 @@ local function CreateWarningUI()
     reminderControl:ClearAnchors()
     reminderControl:SetAnchor(HWR.settings.position.point, HWR.settings.position.relativeTo, HWR.settings.position.relativePoint, HWR.settings.position.x, HWR.settings.position.y)
 
-
+    --
     reminderControlWarning = WINDOW_MANAGER:CreateTopLevelWindow(NAME .. "WarningMiddle")
     reminderControlWarning:SetDimensions(600, 80)
     reminderControlWarning:SetAnchor(CENTER, GuiRoot, CENTER, 0, 0)
     reminderControlWarning:SetDrawTier(DT_HIGH)
     reminderControlWarning:SetHidden(true)
 
-        -- Icon
+    -- Icon
     warningIcon = WINDOW_MANAGER:CreateControl("$(parent)Icon", reminderControl, CT_TEXTURE)
     warningIcon:SetAnchor(CENTER, reminderControl, CENTER, 0, 0)
-    warningIcon:SetDimensions(80, 80)
+    warningIcon:SetDimensions(iconDimensions, iconDimensions)
+    --warningIcon:SetDimensions(80, 80)
     warningIcon:SetTexture("/esoui/art/icons/gear_hircinessnarlmask_head_a.dds")
     warningIcon:SetHidden(false)
 
-    -- Text
+    -- Timer text
     warningTimer = WINDOW_MANAGER:CreateControl("$(parent)Text", reminderControl, CT_LABEL)
-    warningTimer:SetFont("ZoFontWinH1")
-    warningTimer:SetAnchor(CENTER, reminderControl, CENTER, 0, 30)
+    --warningTimer:SetFont("ZoFontWinH1")
+    warningTimer:SetFont(GetTimerFont()) 
+    warningTimer:SetAnchor(CENTER, reminderControl, CENTER, 0, iconDimensions/2 + 10)
+    --warningTimer:SetAnchor(CENTER, reminderControl, CENTER, 0, 30)
     warningTimer:SetHorizontalAlignment(TEXT_ALIGN_CENTER)
     warningTimer:SetVerticalAlignment(TEXT_ALIGN_CENTER)
     warningTimer:SetColor(1, 1, 1, 1)
@@ -144,9 +181,11 @@ local function CreateWarningUI()
 
     -- Warning text label
     warningText = WINDOW_MANAGER:CreateControl("$(parent)Text", reminderControlWarning, CT_LABEL)
-    warningText:SetFont("ZoFontWinH1")
+    warningText:SetFont(GetWarningFont())
+    --warningText:SetFont("ZoFontWinH1")
     warningText:SetColor(1, 0.2, 0.2, 1) -- Red color for urgency
-    warningText:SetText(">>> HUNTSMAN WARMASK MISSING! <<<")
+    --warningText:SetText(">>> HUNTSMAN WARMASK MISSING! <<<")
+    warningText:SetText(">>> BASH <<<")
     warningText:SetDimensions(580, 60)
     warningText:SetAnchor(CENTER, reminderControlWarning, CENTER, 0, 0)
     warningText:SetHorizontalAlignment(TEXT_ALIGN_CENTER)
@@ -154,6 +193,51 @@ local function CreateWarningUI()
     
     Debug("Warning UI created.")
 end
+
+local function UpdateIconSize()
+    if reminderControl and warningIcon then
+        local iconSize = HWR.settings.iconSize or 100
+        local iconDimensions = (iconSize / 100) * 80
+        
+        -- -- Größe des Hauptfensters anpassen
+        reminderControl:SetDimensions(iconDimensions + 40, iconDimensions + 40)
+        
+        -- -- Icon-Größe aktualisieren
+        warningIcon:SetDimensions(iconDimensions, iconDimensions)
+        
+        -- -- Timer-Position anpassen
+        warningTimer:SetAnchor(CENTER, reminderControl, CENTER, 0, iconDimensions/2 + 10)
+        
+        Debug("Icon size updated to: " .. iconSize .. "% (" .. iconDimensions .. "px)")
+    end
+end
+
+HWR.UpdateIconSize = UpdateIconSize -- Global
+
+-- =============================================================================
+-- == FONT SIZE UPDATE FUNCTION ================================================
+-- =============================================================================
+--[[
+    Function: UpdateFontSizes
+    Purpose: Updates font sizes for timer and warning text
+--]]
+local function UpdateFontSizes()
+    if warningTimer then
+        warningTimer:SetFont(GetTimerFont())
+        warningTimer:SetHorizontalAlignment(TEXT_ALIGN_CENTER)
+        warningTimer:SetVerticalAlignment(TEXT_ALIGN_CENTER)
+    end
+    
+    if warningText then
+        warningText:SetFont(GetWarningFont())
+        warningText:SetHorizontalAlignment(TEXT_ALIGN_CENTER)
+        warningText:SetVerticalAlignment(TEXT_ALIGN_CENTER)
+    end
+    
+    Debug("Font sizes updated. Timer: " .. (HWR.settings.timerFontSize or 32) .. "px, Warning: " .. (HWR.settings.warningFontSize or 50) .. "px")
+end
+
+HWR.UpdateFontSizes = UpdateFontSizes -- Global 
 
 -- =============================================================================
 -- == WARNING VISIBILITY CONTROL ===============================================
@@ -307,7 +391,13 @@ local function CheckConditions()
             reminderControl:SetHidden(false)
 
             if HWR.settings.toggleTimer then
-                warningTimer:SetColor(0, 1, 0, 1) 
+                --warningTimer:SetColor(0, 1, 0, 1) 
+                warningTimer:SetColor(
+                    HWR.settings.timerColor.r or 0,
+                    HWR.settings.timerColor.g or 1,
+                    HWR.settings.timerColor.b or 0,
+                    HWR.settings.timerColor.a or 1
+                )
                 warningTimer:SetText(string.format("%d", remaining))
             else
                 warningTimer:SetText("")
@@ -318,13 +408,25 @@ local function CheckConditions()
             remainingTime = 0
             cdTimer = 0
             reminderControl:SetHidden(false)
-            warningTimer:SetColor(1, 1, 1, 1) 
+            -- warningTimer:SetColor(1, 1, 1, 1) 
+            warningTimer:SetColor(
+                HWR.settings.bashColor.r or 1,
+                HWR.settings.bashColor.g or 1,
+                HWR.settings.bashColor.b or 1,
+                HWR.settings.bashColor.a or 1
+            )
             warningTimer:SetText("Bash")
         elseif remainingTime > 50 and cdTimer <=10 then
             cdTimer = 10-(60-remainingTime)
             remainingTime = remainingTime-0.2
             reminderControl:SetHidden(false)
-            warningTimer:SetColor(1, 0.2, 0.2, 1) 
+            --warningTimer:SetColor(1, 0.2, 0.2, 1) 
+            warningTimer:SetColor(
+                HWR.settings.cooldownColor.r or 1,
+                HWR.settings.cooldownColor.g or 0.2,
+                HWR.settings.cooldownColor.b or 0.2,
+                HWR.settings.cooldownColor.a or 1
+            )
             warningTimer:SetText(string.format("%d", cdTimer-0.2))
         else
             remainingTime = 0
@@ -466,39 +568,62 @@ SLASH_COMMANDS["/huntsmanwarmaskreminder"] = function()
     end
 end
 
--------------------------------------------------------------
--- Slash Commands
--------------------------------------------------------------
-local function ToggleAddon()
-    HWR.settings.enabled = not HWR.settings.enabled
-    d("|cFFFFFFHWR:|r " .. (HWR.settings.enabled and "|c00FF00enabled|r" or "|cFF0000disabled|r"))
+-- =======================================================================
+-- == Slash Commands =====================================================
+-- =======================================================================
+local function ResetTimerColor()
+    HWR.settings.timerColor = {r=0, g=1, b=0, a=1}
+    d("|cFFFFFF |cFF0000HWR|r Timer Color:|r |c00FF00RESET to green|r")
+    if HWR.settings.enabled then
+        CheckConditions()
+    end
 end
 
+local function ResetBashColor()
+    HWR.settings.bashColor = {r=1, g=1, b=1, a=1}
+    d("|cFFFFFF |cFF0000HWR|r Bash Color:|r |cFFFFFFRESET to white|r")
+    if HWR.settings.enabled then
+        CheckConditions()
+    end
+end
+
+local function ResetCooldownColor()
+    HWR.settings.cooldownColor = {r=1, g=0.2, b=0.2, a=1}
+    d("|cFFFFFF |cFF0000HWR|r Cooldown Color:|r |cFF5555RESET to red|r")
+    if HWR.settings.enabled then
+        CheckConditions()
+    end
+end
+
+local function ToggleAddon()
+    HWR.settings.enabled = not HWR.settings.enabled
+    d("|cFFFFFF |cFF0000HWR|r:|r " .. (HWR.settings.enabled and "|c00FF00enabled|r" or "|cFF0000disabled|r"))
+end
 
 local function ToggleShowOutside()
     HWR.settings.showOutsideCombat = not HWR.settings.showOutsideCombat
-    d("|cFFFFFFHWR Show Outside Combat:|r " ..
+    d("|cFFFFFF|cFF0000HWR|r Show Outside Combat:|r " ..
         (HWR.settings.showOutsideCombat and "|c00FF00ON|r" or "|cFF0000OFF|r"))
 end
 
-
 local function ToggleShowTimer()
     HWR.settings.toggleTimer = not HWR.settings.toggleTimer
-    d("|cFFFFFFHWR Toggle Timer on Icon:|r " ..
+    d("|cFFFFFF|cFF0000HWR|r Toggle Timer on Icon:|r " ..
         (HWR.settings.toggleTimer and "|c00FF00ON|r" or "|cFF0000OFF|r"))
 end
 
 local function ToggleWarning()
     HWR.settings.toggleWarning = not HWR.settings.toggleWarning
-    d("|cFFFFFFHWR Toggle Warning in the middle on the screen:|r " ..
+    d("|cFFFFFF|cFF0000HWR|r Toggle Warning in the middle on the screen:|r " ..
         (HWR.settings.toggleWarning and "|c00FF00ON|r" or "|cFF0000OFF|r"))
 end
 SLASH_COMMANDS["/hwr"] = ToggleAddon
 SLASH_COMMANDS["/hwrshow"] = ToggleShowOutside
 SLASH_COMMANDS["/hwrstoggletimer"] = ToggleShowTimer
 SLASH_COMMANDS["/hwrstogglewarning"] = ToggleWarning
-
-
+SLASH_COMMANDS["/hwrresettimercolor"] = ResetTimerColor
+SLASH_COMMANDS["/hwrresetbashcolor"] = ResetBashColor
+SLASH_COMMANDS["/hwrresetcooldowncolor"] = ResetCooldownColor
 
 -- =============================================================================
 -- == ADDON INITIALIZATION =====================================================

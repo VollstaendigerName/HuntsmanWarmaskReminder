@@ -4,7 +4,7 @@
 -- AddOn Name:        HuntsmanWarmaskReminder
 -- Description:       configuration menu system
 -- Authors:           Orollas & VollständigerName
--- Version:           1.1.1
+-- Version:           1.2.0
 -- Dependencies:      LibAddonMenu-2.0
 -- =============================================================================
 -- =============================================================================
@@ -138,6 +138,135 @@ function HWR.BuildMenu(HWRSV)
             type = "submenu",
             name = COLOR.ACCENT.."Settings",
             controls = {
+                 {
+                    type = "slider",
+                    name = COLOR.PRIMARY.."Icon Size",
+                    tooltip = COLOR.SECONDARY.."Adjust the size of the warning icon (50-200%)",
+                    min = 50,
+                    max = 200,
+                    step = 5,
+                    getFunc = function() return HWR.settings.iconSize or 100 end,
+                    setFunc = function(value)
+                        HWR.settings.iconSize = value
+                        if HWR.UpdateIconSize then
+                            HWR.UpdateIconSize()
+                        end
+                    end,
+                    width = "full",
+                    style = {
+                        paddingTop = 8,
+                        paddingBottom = 8
+                    }
+                },
+
+                -- Timer Font Size
+                {
+                    type = "slider",
+                    name = COLOR.PRIMARY.."Timer Font Size",
+                    tooltip = COLOR.SECONDARY.."Adjust the font size of the timer text (16-128px)",
+                    min = 16,
+                    max = 128,
+                    step = 1,
+                    getFunc = function() return HWR.settings.timerFontSize or 32 end,
+                    setFunc = function(value)
+                        HWR.settings.timerFontSize = value
+                        if HWR.UpdateFontSizes then
+                            HWR.UpdateFontSizes()
+                        end
+                    end,
+                    width = "full",
+                    style = {
+                        paddingTop = 8,
+                        paddingBottom = 8
+                    }
+                },
+                
+                -- Warning Font Size
+                {
+                    type = "slider",
+                    name = COLOR.PRIMARY.."Warning Font Size",
+                    tooltip = COLOR.SECONDARY.."Adjust the font size of the warning text (16-128px)",
+                    min = 16,
+                    max = 128,
+                    step = 1,
+                    getFunc = function() return HWR.settings.warningFontSize or 50 end,
+                    setFunc = function(value)
+                        HWR.settings.warningFontSize = value
+                        if HWR.UpdateFontSizes then
+                            HWR.UpdateFontSizes()
+                        end
+                    end,
+                    width = "full",
+                    style = {
+                        paddingTop = 8,
+                        paddingBottom = 8
+                    }
+                },
+
+                -- Timer
+                {
+                    type = "colorpicker",
+                    name = COLOR.PRIMARY.."Timer Color (Active Buff)",
+                    tooltip = COLOR.SECONDARY.."Set the color for the timer when buff is active",
+                    getFunc = function()
+                        local c = HWR.settings.timerColor or {r=0, g=1, b=0, a=1}
+                        return c.r, c.g, c.b, c.a
+                    end,
+                    setFunc = function(r, g, b, a)
+                        HWR.settings.timerColor = {r=r, g=g, b=b, a=a}
+                        if HWR.settings.enabled and reminderControl and warningTimer then
+                            CheckConditions()
+                        end
+                    end,
+                    width = "full",
+                    style = {
+                        paddingTop = 8,
+                        paddingBottom = 8
+                    }
+                },
+                -- Bash
+                {
+                    type = "colorpicker",
+                    name = COLOR.PRIMARY.."Bash Text Color",
+                    tooltip = COLOR.SECONDARY.."Set the color for the 'Bash' reminder text",
+                    getFunc = function()
+                        local c = HWR.settings.bashColor or {r=1, g=1, b=1, a=1}
+                        return c.r, c.g, c.b, c.a
+                    end,
+                    setFunc = function(r, g, b, a)
+                        HWR.settings.bashColor = {r=r, g=g, b=b, a=a}
+                        if HWR.settings.enabled and reminderControl and warningTimer then
+                            CheckConditions()
+                        end
+                    end,
+                    width = "full",
+                    style = {
+                        paddingTop = 8,
+                        paddingBottom = 8
+                    }
+                },
+                -- Cooldown
+                {
+                    type = "colorpicker",
+                    name = COLOR.PRIMARY.."Cooldown Timer Color",
+                    tooltip = COLOR.SECONDARY.."Set the color for the cooldown timer",
+                    getFunc = function()
+                        local c = HWR.settings.cooldownColor or {r=1, g=0.2, b=0.2, a=1}
+                        return c.r, c.g, c.b, c.a
+                    end,
+                    setFunc = function(r, g, b, a)
+                        HWR.settings.cooldownColor = {r=r, g=g, b=b, a=a}
+                        if HWR.settings.enabled and reminderControl and warningTimer then
+                            CheckConditions()
+                        end
+                    end,
+                    width = "full",
+                    style = {
+                        paddingTop = 8,
+                        paddingBottom = 8
+                    }
+                },
+
                 CreateCheckbox(
                                 "Toggle timer on icon",
                                 "When this feature is enabled, a timer is displayed. Otherwise, the timer disappears and you only receive a 'bash' reminder every 60 seconds.",
@@ -175,7 +304,7 @@ function HWR.BuildMenu(HWRSV)
         }
     }   
 
-    LAM:RegisterOptionControls(HWR.name.."_LAM", optionsTable)
+    --LAM:RegisterOptionControls(HWR.name.."_LAM", optionsTable)
     LAM:RegisterOptionControls(HWR.name.."Menu", options)
 end
 
