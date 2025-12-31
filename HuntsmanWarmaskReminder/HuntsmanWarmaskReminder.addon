@@ -1,14 +1,18 @@
 ## Title: |cFF0000HuntsmanWarmask|rReminder
 ## APIVersion: 101048
-## Author: |cEBD03CVollständigerName|r & |c8A2BE2Orollas|r 
-## Version: 1.2.0
+## Author: |cEBD03CVollständigerName|r & |c8A2BE2Orollas|r
+## Version: 1.2.1
 ## SavedVariables: HuntsmanWarmaskReminderSV
 ## DependsOn: LibAddonMenu-2.0>=41
-## Description: Warns when Huntsman Warmask is equipped but buff is missing in combat. Usage: /huntsmanwarmaskreminder
+## Description: Warns when Huntsman Warmask is equipped but bash-applied buff/debuff is missing in combat. Features customizable timer, warning display, and line-to-target visual aid. Usage: /hwr. Credits: Scene management by Duesentrieb. Line drawing based on BetterGuard by TheMrPancake, CrutchAlerts by Kyzeragon, and OdySupportIcons by Lamierina7.
 
 HuntsmanWarmaskReminder.lua
 HWRMenu.lua
+HWRLine.lua
 
-## Notes: This add-on is not created by, affiliated with, or supported by ZeniMax Media Inc. 
-##        The Elder Scrolls® and related logos are registered trademarks or trademarks 
+## Changelog:
+## v1.2.1 - New features: Line-to-target visual aid (PvE only), horizontal layout option, bashed target name display, "can bash" text indicator, font family selection, bashed target font size setting. Code quality: Fixed duplicate code bug, added proper local declarations, improved operator precedence, removed unused code, consolidated constants, moved scene callbacks into Initialize().
+
+## Notes: This add-on is not created by, affiliated with, or supported by ZeniMax Media Inc.
+##        The Elder Scrolls® and related logos are registered trademarks or trademarks
 ##        of ZeniMax Media Inc. in the United States and/or other countries. All rights reserved.
