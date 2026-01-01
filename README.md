@@ -31,7 +31,7 @@ The tracked target is cleared when:
 
 During the "can bash" period, bashing a new target will switch tracking to the new target (the original target is replaced, not simply cleared).
 
-### Bashed State (No Active Debuff)
+### Ready to Bash State (No Active Debuff)
 
 **When**: Before your first bash, or after the 60-second debuff has expired.
 
@@ -70,14 +70,14 @@ During the "can bash" period, bashing a new target will switch tracking to the n
 
 | State | Timer Color | Timer Text | Can Bash New Target? |
 |-------|------------|------------|---------------------|
-| Bashed State | White | "Bash" | Yes |
+| Ready to Bash | White | "Bash" | Yes |
 | Cooldown (60-50s) | Red | Countdown (60-50) | No (ignored) |
 | Can Bash (50-0s) | Green | Countdown + "can bash" | Yes |
 | Buff Active | Green | Buff remaining time | N/A |
 
 ## Arrow Visual Aid (PvE Only)
 
-The addon can optionally draw an arrow from your character to the debuffed target. This visual aid helps you quickly identify which enemy has the Mark of Hircine debuff applied.
+The addon can optionally draw an arrow from your character to the debuffed target. This visual aid helps you quickly identify which enemy has the Mark of Hircine debuff applied, but API restrictions mean this arrow is only visible when the debuffed target is under your reticle (and you are in a PVE setting). This is useful for figuring out if you have bashed the correct target. 
 
 ### How It Works
 
