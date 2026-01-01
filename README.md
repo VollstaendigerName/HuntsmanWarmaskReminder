@@ -23,7 +23,6 @@ The addon tracks your bash state and provides different visual feedback based on
 When you bash a target, the addon tracks that specific target:
 - **Target Name**: Stored to identify the bashed enemy
 - **Target Unit ID**: Used to verify the exact target (from combat events)
-- **Visual Aids**: If enabled, draws an arrow to the debuffed target when you aim at them (PvE only)
 
 The tracked target is cleared when:
 - You leave combat
@@ -49,7 +48,6 @@ During the "can bash" period, bashing a new target will switch tracking to the n
 - Shows a red cooldown timer counting down from 60 to 50 seconds
 - **Ignores new bashes** during this period to prevent spam and ensure proper debuff application
 - Keeps tracking the original bashed target
-- Visual arrow is drawn to the debuffed target if enabled
 
 **Purpose**: Prevents accidentally bashing multiple targets during the internal cooldown period.
 
@@ -61,7 +59,6 @@ During the "can bash" period, bashing a new target will switch tracking to the n
 - Shows a green timer counting down the remaining debuff time
 - Displays "can bash" text next to the timer (if enabled in settings)
 - **Accepts new bashes** - bashing a new target will reset the 60-second timer and track the new target
-- Visual aids continue to show the currently tracked target
 - Timer color changes from red (cooldown) to green (can bash)
 
 **Purpose**: Indicates when you can safely bash a new target to refresh or change the debuff application.
@@ -74,28 +71,6 @@ During the "can bash" period, bashing a new target will switch tracking to the n
 | Cooldown (60-50s) | Red | Countdown (60-50) | No (ignored) |
 | Can Bash (50-0s) | Green | Countdown + "can bash" | Yes |
 | Buff Active | Green | Buff remaining time | N/A |
-
-## Arrow Visual Aid (PvE Only)
-
-The addon can optionally draw an arrow from your character to the debuffed target. This visual aid helps you quickly identify which enemy has the Mark of Hircine debuff applied, but API restrictions mean this arrow is only visible when the debuffed target is under your reticle (and you are in a PVE setting). This is useful for figuring out if you have bashed the correct target. 
-
-### How It Works
-
-Due to ESO API limitations, the addon cannot retrieve the world position of arbitrary units by name or ID. The only reliable way to get an enemy's position is when they are under your reticle (crosshair). Therefore:
-
-- **The arrow only appears when you are looking directly at a target with the Mark of Hircine debuff**
-- When you move your reticle away from the debuffed target, the arrow disappears
-- This is useful for confirming which target in a group has the debuff applied
-- The arrow color matches the current state (red during cooldown, green during can bash)
-
-### PvE Only Restriction
-
-This visual aid is **automatically disabled in PvP environments** (Cyrodiil, Imperial City, and Battlegrounds). This is intentional because:
-
-- Drawing arrows to enemy players could provide unfair targeting assistance
-- Such functionality may violate the ESO Terms of Service in PvP contexts
-
-The addon checks `IsPlayerInAvAWorld()` and `IsActiveWorldBattleground()` and will not draw any arrows when either returns true.
 
 ## Settings
 
@@ -110,10 +85,6 @@ All settings are accessible through the addon menu (Settings > Addons > Huntsman
 - **Show bashed target name**: When enabled, displays the name of the currently debuffed target below the timer.
 - **Show "BASH" center-screen instead of icon**: When enabled, displays large text in the center of the screen instead of the movable icon.
 - **Horizontal layout**: When enabled, displays the icon on the left with timer/bash/can bash text to the right. When disabled, uses vertical layout with text below the icon.
-
-### Visual Aids (PvE Only)
-
-- **Draw arrow to debuffed target**: When enabled, draws an arrow from you to the target with Mark of Hircine debuff when you look at them. Automatically disabled in PvP.
 
 ### Display Settings
 
@@ -132,4 +103,3 @@ All settings are accessible through the addon menu (Settings > Addons > Huntsman
 ## Credits
 
 - Scene management assistance by Duesentrieb
-- Arrow drawing based on BetterGuard by TheMrPancake, CrutchAlerts by Kyzeragon, and OdySupportIcons by Lamierina7
