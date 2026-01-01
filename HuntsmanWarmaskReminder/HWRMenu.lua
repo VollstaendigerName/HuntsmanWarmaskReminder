@@ -4,7 +4,7 @@
 -- AddOn Name:        HuntsmanWarmaskReminder
 -- Description:       configuration menu system
 -- Authors:           Orollas & VollständigerName
--- Version:           1.2.1
+-- Version:           1.2.2
 -- Dependencies:      LibAddonMenu-2.0
 -- =============================================================================
 -- =============================================================================
@@ -187,30 +187,6 @@ function HWR.BuildMenu(HWRSV)
                 end
             end,
             function() return HWR.settings.toggleWarning end
-        ),
-
-        -- Visual Aids Section
-        {
-            type = "divider",
-            alpha = 0.3
-        },
-        {
-            type = "description",
-            text = COLOR.ACCENT.."Visual Aids (PvE Only)",
-            fontSize = "medium"
-        },
-        CreateCheckbox(
-            "Draw arrow to debuffed target",
-            "When enabled, draws an arrow from you to the target with Mark of Hircine debuff when you look at them. Only works in PvE (disabled in PvP).",
-            function() return HWR.settings.enableLine end,
-            function(value)
-                HWR.settings.enableLine = value
-                if not value and HWR.RemoveLine then
-                    HWR.RemoveLine()
-                elseif value and HWR.DrawLineToTarget then
-                    HWR.DrawLineToTarget()
-                end
-            end
         ),
 
         -- Display Settings Section (merged with Color Settings)

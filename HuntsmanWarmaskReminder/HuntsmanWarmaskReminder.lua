@@ -4,7 +4,7 @@
 --[[
     AddOn Name:         HuntsmanWarmaskReminder
     Description:        Warns when Huntsman Warmask is equipped but buff is missing in combat
-    Version:            1.2.1
+    Version:            1.2.2
     Author:             VollständigerName
     Dependencies:       LibAddonMenu-2.0
 --]]
@@ -30,7 +30,7 @@
 --]]
 HuntsmanWarmaskReminder = {
     name = "HuntsmanWarmaskReminder",
-    version = "1.2.1",
+    version = "1.2.2",
     settings = {
         enabled = true,  -- Default: reminder enabled
         debugMode = false,  -- Default: debug disabled
@@ -45,7 +45,6 @@ HuntsmanWarmaskReminder = {
         timerColor = { r = 0, g = 1, b = 0, a = 1 },      -- Green timer
         bashColor = { r = 1, g = 1, b = 1, a = 1 },       -- White bash
         cooldownColor = { r = 1, g = 0.2, b = 0.2, a = 1 }, -- Red cooldown
-        enableLine = false, -- Draw line to debuffed target (PvE only)
         enableCanBash = true, -- Show "can bash" text when debuff is active (after 10s)
         showBashedTarget = false, -- Show bashed target name under the timer/bash indicator
         horizontalLayout = false, -- Use horizontal layout (icon left, text right)
@@ -79,14 +78,10 @@ local HWRSV -- SavedVariables reference
 -- Constants
 local HUNTSMAN_WARMASK_ITEM_ID = 223189
 local HUNTSMAN_WARMASK_BUFF_ID = 252050
-local MARK_OF_HIRCINE_ID = 252048 -- Mark of Hircine debuff ID
 local REMINDER_COOLDOWN = 1000 -- 1 second in milliseconds
 local BASH_ABILITY_ID = 21970 -- Bash ability ID
 local DEBUFF_DURATION = 60 -- 60 seconds debuff duration
 local DEBUFF_COOLDOWN = 10 -- 10 seconds internal cooldown (first 10s of debuff)
-
--- Expose constants for other modules (e.g., HWRLine.lua)
-HWR.MARK_OF_HIRCINE_ID = MARK_OF_HIRCINE_ID
 
 -- =============================================================================
 -- == RUNTIME VARIABLE DECLARATIONS ============================================
@@ -113,9 +108,6 @@ local isDebuffActive = false -- Whether we're tracking an active debuff
 local bashedTargetUnitId = nil -- Unit ID of the bashed target
 local bashedTargetUnitName = nil -- Unit name of the bashed target
 
--- Expose bashed target unit ID for line drawing
-HWR.bashedTargetUnitId = nil
-
 -- Function to check if we're in the cooldown period (first 10 seconds after bash)
 local function IsInCooldownPeriod()
     if not isDebuffActive then
@@ -125,9 +117,6 @@ local function IsInCooldownPeriod()
     -- Cooldown period is when debuffRemaining > 50 (first 10s of 60s debuff)
     return debuffRemaining > 50
 end
-
--- Expose cooldown check function for line drawing
-HWR.IsInCooldownPeriod = IsInCooldownPeriod
 
 -- =============================================================================
 -- == DEBUG UTILITY FUNCTIONS ==================================================
@@ -552,13 +541,9 @@ local function CheckConditions()
             debuffEndTime = 0
             bashedTargetUnitId = nil
             bashedTargetUnitName = nil
-            HWR.bashedTargetName = nil -- Clear for line drawing
-            HWR.bashedTargetUnitId = nil -- Clear unit ID for line drawing
+            HWR.bashedTargetName = nil
             if warningCanBash then warningCanBash:SetHidden(true) end
             if warningBashLabel then warningBashLabel:SetHidden(true) end
-            if HWR.RemoveLine then
-                HWR.RemoveLine()
-            end
         end
     end
 
@@ -905,21 +890,12 @@ local function ContinuousUpdate()
             debuffEndTime = 0
             bashedTargetUnitId = nil
             bashedTargetUnitName = nil
-            HWR.bashedTargetName = nil -- Clear for line drawing
-            HWR.bashedTargetUnitId = nil -- Clear unit ID for line drawing
-            if HWR.RemoveLine then
-                HWR.RemoveLine()
-            end
+            HWR.bashedTargetName = nil
         end
     end
-    
+
     if HWR.settings.showOutsideCombat or (HWR.settings.enabled and isInCombat and hasWarmaskEquipped) then
         CheckConditions()
-    end
-    
-    -- Update line drawing if enabled
-    if HWR.settings.enableLine and HWR.DrawLineToTarget then
-        HWR.DrawLineToTarget()
     end
 end
 
@@ -945,9 +921,6 @@ local function OnCombatState(eventCode, inCombat)
         bashedTargetUnitName = nil
         isDebuffActive = false
         debuffEndTime = 0
-        if HWR.RemoveLine then
-            HWR.RemoveLine()
-        end
         Debug("Left combat - cleared bashed target")
     end
     
@@ -1037,7 +1010,6 @@ local function OnCombatEvent(eventCode, result, isError, _, _, _, sourceName, so
             HWR.bashedTargetName = formattedTargetName
             bashedTargetUnitName = HWR.bashedTargetName
             bashedTargetUnitId = targetUnitId
-            HWR.bashedTargetUnitId = targetUnitId -- Expose for line drawing
             
             -- Start 60-second debuff timer
             debuffEndTime = GetGameTimeSeconds() + DEBUFF_DURATION
@@ -1050,37 +1022,6 @@ local function OnCombatEvent(eventCode, result, isError, _, _, _, sourceName, so
                 CheckConditions()
             end
         end
-    end
-end
-
---[[
-    Function: OnReticleTargetChanged
-    Purpose: Updates line drawing when reticle target changes
-    Process Flow:
-      1. Checks if line is enabled
-      2. Checks if in PvP (disables in PvP)
-      3. Draws line if reticle target matches bashed target
---]]
-local function OnReticleTargetChanged()
-    if not HWR.settings.enableLine then
-        if HWR.RemoveLine then
-            HWR.RemoveLine()
-        end
-        return
-    end
-    
-    -- Check if in PvP (disable in PvP)
-    local inPvPWorld = IsPlayerInAvAWorld() or IsActiveWorldBattleground()
-    if inPvPWorld then
-        if HWR.RemoveLine then
-            HWR.RemoveLine()
-        end
-        return
-    end
-    
-    -- Update line drawing
-    if HWR.DrawLineToTarget then
-        HWR.DrawLineToTarget()
     end
 end
 
@@ -1209,12 +1150,7 @@ function HWR.Initialize()
     
     -- Create warning UI
     CreateWarningUI()
-    
-    -- Create line UI (if line module is loaded)
-    if HWR.CreateLineUI then
-        HWR.CreateLineUI()
-    end
-    
+
     -- Register event handlers with appropriate filters
     EM:RegisterForEvent(NAME, EVENT_EFFECT_CHANGED, OnEffectChanged)
     EM:AddFilterForEvent(NAME, EVENT_EFFECT_CHANGED, REGISTER_FILTER_UNIT_TAG, "player")
@@ -1227,10 +1163,7 @@ function HWR.Initialize()
     -- Register bash detection
     EM:RegisterForEvent(NAME, EVENT_COMBAT_EVENT, OnCombatEvent)
     EM:AddFilterForEvent(NAME, EVENT_COMBAT_EVENT, REGISTER_FILTER_ABILITY_ID, BASH_ABILITY_ID)
-    
-    -- Register reticle target change for line drawing
-    EM:RegisterForEvent(NAME, EVENT_RETICLE_TARGET_CHANGED, OnReticleTargetChanged)
-    
+
     -- Set up continuous monitoring for state consistency
     EM:RegisterForUpdate(NAME .. "ContinuousUpdate", 250, ContinuousUpdate)
 
