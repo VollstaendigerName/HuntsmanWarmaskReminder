@@ -181,6 +181,28 @@ function HWR.BuildMenu(HWRSV)
                     }
                 },
                 
+                                -- Target Name Font Size
+                {
+                    type = "slider",
+                    name = COLOR.PRIMARY.."Target Name Font Size",
+                    tooltip = COLOR.SECONDARY.."Adjust the font size of the target name text (15-30px)",
+                    min = 15,
+                    max = 30,
+                    step = 1,
+                    getFunc = function() return HWR.settings.targetFontSize or 15 end,
+                    setFunc = function(value)
+                        HWR.settings.targetFontSize = value
+                        if HWR.UpdateFontSizes then
+                            HWR.UpdateFontSizes()
+                        end
+                    end,
+                    width = "full",
+                    style = {
+                        paddingTop = 8,
+                        paddingBottom = 8
+                    }
+                },
+                
                 -- Warning Font Size
                 {
                     type = "slider",
@@ -267,6 +289,17 @@ function HWR.BuildMenu(HWRSV)
                     }
                 },
 
+                CreateCheckbox(
+                                "Show target name below icon",
+                                "Displays the current target name below the warning icon.",
+                                function() return HWR.settings.showTargetName end,
+                                function(value)
+                                    HWR.settings.showTargetName = value
+                                    if HWR.UpdateTargetNameVisibility then
+                                        HWR.UpdateTargetNameVisibility()
+                                    end
+                                end
+                ),
                 CreateCheckbox(
                                 "Toggle timer on icon",
                                 "When this feature is enabled, a timer is displayed. Otherwise, the timer disappears and you only receive a 'bash' reminder every 60 seconds.",

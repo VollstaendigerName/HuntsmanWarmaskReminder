@@ -30,7 +30,7 @@
 --]]
 HuntsmanWarmaskReminder = {
     name = "HuntsmanWarmaskReminder",
-    version = "1.2.0",
+    version = "2.0.2",
     settings = {
         enabled = true,  -- Default: reminder enabled
         debugMode = false,  -- Default: debug disabled
@@ -38,7 +38,9 @@ HuntsmanWarmaskReminder = {
         toggleTimer = true,
         toggleWarning = false,
         LockPosition = true,
+        showTargetName = false;
         timerFontSize = 32,  -- Timer font size (default 32px)
+        targetFontSize = 15,
         warningFontSize = 50, -- Warning font size (default 50px)
         iconSize = 100, -- 100% 
         timerColor = { r = 0, g = 1, b = 0, a = 1 },      -- Green timer
@@ -82,6 +84,7 @@ local isInCombat = false
 local reminderControl = nil
 local reminderControlWarning = nil
 local hasWarmaskEquipped = false
+local lastBashedTargetName = nil
 
 -- =============================================================================
 -- == DEBUG UTILITY FUNCTIONS ==================================================
@@ -108,6 +111,13 @@ end
 --]]
 local function GetTimerFont()
     local fontSize = tonumber(HWR.settings.timerFontSize) or 32
+    local fontPath = "EsoUI/Common/Fonts/univers67.otf"
+    local outline = "soft-shadow-thin"
+    return string.format("%s|%d|%s", fontPath, fontSize, outline)
+end
+
+local function GetTargetNameFont()
+    local fontSize = tonumber(HWR.settings.targetFontSize) or 15
     local fontPath = "EsoUI/Common/Fonts/univers67.otf"
     local outline = "soft-shadow-thin"
     return string.format("%s|%d|%s", fontPath, fontSize, outline)
@@ -190,6 +200,17 @@ local function CreateWarningUI()
     warningText:SetAnchor(CENTER, reminderControlWarning, CENTER, 0, 0)
     warningText:SetHorizontalAlignment(TEXT_ALIGN_CENTER)
     warningText:SetVerticalAlignment(TEXT_ALIGN_CENTER)
+
+    -- Target name label
+    targetNameLabel = WINDOW_MANAGER:CreateControl("$(parent)TargetName", reminderControl, CT_LABEL)
+    targetNameLabel:SetFont(GetTargetNameFont())
+    targetNameLabel:SetAnchor(TOP, warningTimer, BOTTOM, 0, 6)
+    targetNameLabel:SetHorizontalAlignment(TEXT_ALIGN_CENTER)
+    targetNameLabel:SetVerticalAlignment(TEXT_ALIGN_CENTER)
+    targetNameLabel:SetColor(1, 1, 1, 1)
+    targetNameLabel:SetText("")
+    targetNameLabel:SetHidden(true)
+
     
     Debug("Warning UI created.")
 end
@@ -215,6 +236,36 @@ end
 HWR.UpdateIconSize = UpdateIconSize -- Global
 
 -- =============================================================================
+-- == UpdateTargetName ==============================================
+-- =============================================================================
+--[[
+    Function: UpdateTargetName
+    Purpose: Sets the target name below the icon to true or false
+    Process Flow:
+      1. Checks the current label
+      2. Set ui element true or false
+--]]
+local function UpdateTargetName()
+    if not targetNameLabel then return end
+
+    if HWR.settings.showTargetName and isInCombat then
+        targetNameLabel:SetText(lastBashedTargetName )
+        targetNameLabel:SetHidden(false)
+    else
+        lastBashedTargetName = ""
+        targetNameLabel:SetHidden(true)
+    end
+end
+
+local function UpdateTargetNameVisibility()
+    UpdateTargetName()
+end
+
+HWR.UpdateTargetNameVisibility = UpdateTargetNameVisibility -- Global
+
+
+
+-- =============================================================================
 -- == FONT SIZE UPDATE FUNCTION ================================================
 -- =============================================================================
 --[[
@@ -233,7 +284,12 @@ local function UpdateFontSizes()
         warningText:SetHorizontalAlignment(TEXT_ALIGN_CENTER)
         warningText:SetVerticalAlignment(TEXT_ALIGN_CENTER)
     end
-    
+
+    if targetNameLabel then
+        targetNameLabel:SetFont(GetTargetNameFont())
+        targetNameLabel:SetHorizontalAlignment(TEXT_ALIGN_CENTER)
+        targetNameLabel:SetVerticalAlignment(TEXT_ALIGN_CENTER)
+    end
     Debug("Font sizes updated. Timer: " .. (HWR.settings.timerFontSize or 32) .. "px, Warning: " .. (HWR.settings.warningFontSize or 50) .. "px")
 end
 
@@ -368,6 +424,7 @@ local function CheckConditions()
     Debug("In combat: " .. tostring(isInCombat))
     local inMouseMode = IsGameCameraUIModeActive()
     if (HWR.settings.LockPosition and inMouseMode) or not isInCombat and not HWR.settings.showOutsideCombat then
+        lastBashedTargetName = ""
         HideWarning()
         HideIconAndTimer()
         return false
@@ -404,7 +461,7 @@ local function CheckConditions()
                 remainingTime = 0
                 cdTimer = 0
             end
-        elseif (isInCombat or HWR.settings.showOutsideCombat) and remainingTime <=50 then
+        elseif (isInCombat or HWR.settings.showOutsideCombat) and remainingTime <=49.5 then
             remainingTime = 0
             cdTimer = 0
             reminderControl:SetHidden(false)
@@ -468,7 +525,9 @@ end
 local function ContinuousUpdate()
     if HWR.settings.showOutsideCombat or (HWR.settings.enabled and isInCombat and hasWarmaskEquipped) then
         CheckConditions()
-
+        if reminderControl and not reminderControl:IsHidden() then
+            UpdateTargetName()
+        end
     end
 end
 
@@ -488,6 +547,7 @@ local function OnCombatState(eventCode, inCombat)
     Debug("Combat status: " .. (inCombat and "In combat" or "Not in combat"))
     local inMouseMode = IsGameCameraUIModeActive()
     if (HWR.settings.LockPosition and inMouseMode) or not inCombat and not HWR.settings.showOutsideCombat then
+        lastBashedTargetName = ""
         HideWarning()
         HideIconAndTimer()
     else
@@ -545,6 +605,44 @@ local function OnEffectChanged(eventCode, changeType, effectSlot, effectName, un
         end
     end
 end
+
+local function OnBashEvent(
+    eventCode,
+    result,
+    isError,
+    abilityName,
+    abilityGraphic,
+    abilityActionSlotType,
+    sourceName,
+    sourceType,
+    targetName,
+    targetType,
+    hitValue,
+    powerType,
+    damageType,
+    log,
+    sourceUnitId,
+    targetUnitId,
+    abilityId
+)
+    if remainingTime >= 50 then return end
+    if sourceType ~= COMBAT_UNIT_TYPE_PLAYER then return end
+
+    if abilityId == 0 or abilityId == nil then return end
+
+    local formattedTarget = targetName ~= "" and zo_strformat("<<1>>", targetName) or ""
+    local formattedAbility = abilityName ~= "" and zo_strformat("<<1>>", abilityName) or ""
+    lastBashedTargetName = formattedTarget
+    Debug(string.format(
+        "|cAAAAFF[HWR COMBAT]|r result=%d | abilityId=%d | ability=%s | target=%s",
+        result,
+        abilityId,
+        formattedAbility,
+        formattedTarget
+    ))
+end
+
+
 
 -- =============================================================================
 -- == SLASH COMMAND IMPLEMENTATION =============================================
@@ -645,7 +743,9 @@ function HWR.Initialize()
     
     -- Create warning UI
     CreateWarningUI()
-    
+    EM:RegisterForEvent(NAME, EVENT_COMBAT_EVENT, OnBashEvent)
+    EM:AddFilterForEvent(NAME, EVENT_COMBAT_EVENT, REGISTER_FILTER_ABILITY_ID, 21970)
+
     -- Register event handlers with appropriate filters
     EM:RegisterForEvent(NAME, EVENT_EFFECT_CHANGED, OnEffectChanged)
     EM:AddFilterForEvent(NAME, EVENT_EFFECT_CHANGED, REGISTER_FILTER_UNIT_TAG, "player")
@@ -687,6 +787,8 @@ end
 function sceneChange(_, scene) -- Thank you Duesentrieb <3
     reminderControl:SetHidden(true)
 end
+
+
 -- =============================================================================
 -- == EVENT REGISTRATION =======================================================
 -- =============================================================================
