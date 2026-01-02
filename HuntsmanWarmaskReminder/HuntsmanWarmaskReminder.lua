@@ -4,7 +4,7 @@
 --[[
     AddOn Name:         HuntsmanWarmaskReminder
     Description:        Warns when Huntsman Warmask is equipped but buff is missing in combat
-    Version:            1.2.0
+    Version:            2.0.2
     Author:             VollständigerName & Orollas
     Dependencies:       LibAddonMenu-2.0
 --]]
@@ -54,8 +54,8 @@ local HuntsmanWarmaskReminder = {
         },
         colorForFirst10sCooldown = true,
         enableCanBash = false,
-        fontFamily = "Univers67",
-        horizontalLayout = false, -- Use horizontal layout (icon left, text right)
+        textFont = "Univers67",
+        textRight = false, -- Use horizontal layout (icon left, text right)
 }
 
 -- =============================================================================
@@ -117,30 +117,32 @@ end
     Function: GetTimerFont
     Purpose: Returns formatted font string for timer text
 --]]
-local FONT_PATHS = {
+local fontPaths = {
     ["Univers67"] = "EsoUI/Common/Fonts/univers67.otf",
     ["ProseAntiquePSMT"] = "EsoUI/Common/Fonts/ProseAntiquePSMT.otf",
+    ["esocartographer-bold"] = "EsoUI/Common/Fonts/esocartographer-bold.otf",
+    ["fontin_sans_b"] = "EsoUI/Common/Fonts/fontin_sans_b.otf",
+    ["fontin_sans_i"] = "EsoUI/Common/Fonts/fontin_sans_i.otf",
+    ["fontin_sans_r"] = "EsoUI/Common/Fonts/fontin_sans_r.otf",
+    ["arialn"] = "EsoUI/Common/Fonts/arialn.ttf",
+    ["consola"] = "EsoUI/Common/Fonts/consola.ttf",
+    ["fontin_sans_sc"] = "EsoUI/Common/Fonts/fontin_sans_sc.otf",
+    ["Handwritten_Bold"] = "EsoUI/Common/Fonts/Handwritten_Bold.otf",
+    ["trajanpro-regular"] = "EsoUI/Common/Fonts/trajanpro-regular.otf",
+    ["univers55"] = "EsoUI/Common/Fonts/univers55.otf",
+    ["univers57"] = "EsoUI/Common/Fonts/univers57.otf",
 }
-
---[[
-    Function: GetFontPath
-    Purpose: Returns the font path for the selected font family
---]]
-local function GetFontPath()
-    local fontFamily = HWRSV.fontFamily or "Univers67"
-    return FONT_PATHS[fontFamily] or FONT_PATHS["Univers67"]
-end
 
 local function GetTimerFont()
     local fontSize = tonumber(HWRSV.timerFontSize) or 32
-    local fontPath = GetFontPath()
+    local fontPath = fontPaths[HWRSV.textFont or "Univers67"]
     local outline = "soft-shadow-thin"
     return string.format("%s|%d|%s", fontPath, fontSize, outline)
 end
 
 local function GetTargetNameFont()
     local fontSize = tonumber(HWRSV.targetFontSize) or 15
-    local fontPath = GetFontPath()
+    local fontPath = fontPaths[HWRSV.textFont or "Univers67"]
     local outline = "soft-shadow-thin"
     return string.format("%s|%d|%s", fontPath, fontSize, outline)
 end
@@ -151,7 +153,7 @@ end
 --]]
 local function GetWarningFont()
     local fontSize = tonumber(HWRSV.warningFontSize) or 50
-    local fontPath = GetFontPath()
+    local fontPath = fontPaths[HWRSV.textFont or "Univers67"]
     local outline = "soft-shadow-thick"
     return string.format("%s|%d|%s", fontPath, fontSize, outline)
 end
@@ -185,7 +187,6 @@ local function CreateWarningUI()
     reminderControl:ClearAnchors()
     reminderControl:SetAnchor(HWRSV.position.point, HWRSV.position.relativeTo, HWRSV.position.relativePoint, HWRSV.position.x, HWRSV.position.y)
 
-    --
     reminderControlWarning = WINDOW_MANAGER:CreateTopLevelWindow(NAME .. "WarningMiddle")
     reminderControlWarning:SetDimensions(600, 80)
     reminderControlWarning:SetAnchor(CENTER, GuiRoot, CENTER, 0, 0)
@@ -238,64 +239,29 @@ local function CreateWarningUI()
 end
 
 local function UpdateIconSize()
-    -- if reminderControl and warningIcon then
-    --     local iconSize = HWRSV.iconSize or 100
-    --     local iconDimensions = (iconSize / 100) * 80
-    --     warningIcon:SetDimensions(iconDimensions, iconDimensions)
-    --     warningTimer:SetAnchor(CENTER, reminderControl, CENTER, 0, iconDimensions/2 + 10)
-        
-    --     Debug("Icon size updated to: " .. iconSize .. "% (" .. iconDimensions .. "px)")
-    -- end
     if reminderControl and warningIcon then
         local iconSize = HWRSV.iconSize or 100
         local iconDimensions = (iconSize / 100) * 80
+        
 
-        -- Update main window dimensions based on layout
-        if HWRSV.horizontalLayout then
-            reminderControl:SetDimensions(iconDimensions + 200, iconDimensions + 40)
-        else
-            reminderControl:SetDimensions(iconDimensions + 40, iconDimensions + 40)
-        end
-
-        -- Update icon size
+        reminderControl:SetDimensions(iconDimensions + 40, iconDimensions + 40)
+        
         warningIcon:SetDimensions(iconDimensions, iconDimensions)
-
-        -- Update icon anchor based on layout
-        warningIcon:ClearAnchors()
-        if HWRSV.horizontalLayout then
-            warningIcon:SetAnchor(LEFT, reminderControl, LEFT, 10, 0)
-        else
-            warningIcon:SetAnchor(CENTER, reminderControl, CENTER, 0, 0)
-        end
-
-        -- Update timer position based on layout
+        
+        warningTimer:SetAnchor(CENTER, reminderControl, CENTER, 0, iconDimensions/2 + 10)
         warningTimer:ClearAnchors()
-        if HWRSV.horizontalLayout then
-            warningTimer:SetAnchor(LEFT, warningIcon, RIGHT, 10, 0)
-            warningTimer:SetHorizontalAlignment(TEXT_ALIGN_LEFT)
-        else
+        if HWRSV.textRight then
+             warningTimer:SetAnchor(LEFT, warningIcon, RIGHT, 10, 0)
+        else 
             warningTimer:SetAnchor(CENTER, reminderControl, CENTER, 0, iconDimensions/2 + 10)
-            warningTimer:SetHorizontalAlignment(TEXT_ALIGN_CENTER)
         end
-
-        -- Update bashed target name position based on layout
-        if warningBashedTarget then
-            warningBashedTarget:ClearAnchors()
-            if HWRSV.horizontalLayout then
-                warningBashedTarget:SetAnchor(TOPLEFT, warningTimer, BOTTOMLEFT, 0, 5)
-                warningBashedTarget:SetHorizontalAlignment(TEXT_ALIGN_LEFT)
-            else
-                local bashedTargetOffset = iconDimensions/2 + 10 + math.max(20, iconDimensions * 0.3)
-                warningBashedTarget:SetAnchor(CENTER, reminderControl, CENTER, 0, bashedTargetOffset)
-                warningBashedTarget:SetHorizontalAlignment(TEXT_ALIGN_CENTER)
-            end
-        end
-
-        Debug("Icon size updated to: " .. iconSize .. "% (" .. iconDimensions .. "px), layout: " .. (HWRSV.horizontalLayout and "horizontal" or "vertical"))
+        
+        Debug("Icon size updated to: " .. iconSize .. "% (" .. iconDimensions .. "px)")
     end
 end
 
-HWR.UpdateIconSize = UpdateIconSize -- Global
+
+HWR.UpdateIconSize = UpdateIconSize
 
 -- =============================================================================
 -- == UpdateTargetName ==============================================
@@ -323,7 +289,7 @@ local function UpdateTargetNameVisibility()
     UpdateTargetName()
 end
 
-HWR.UpdateTargetNameVisibility = UpdateTargetNameVisibility -- Global
+HWR.UpdateTargetNameVisibility = UpdateTargetNameVisibility
 
 
 
@@ -355,7 +321,7 @@ local function UpdateFontSizes()
     Debug("Font sizes updated. Timer: " .. (HWRSV.timerFontSize or 32) .. "px, Warning: " .. (HWRSV.warningFontSize or 50) .. "px")
 end
 
-HWR.UpdateFontSizes = UpdateFontSizes -- Global 
+HWR.UpdateFontSizes = UpdateFontSizes
 
 -- =============================================================================
 -- == WARNING VISIBILITY CONTROL ===============================================
@@ -509,71 +475,40 @@ local function CheckConditions()
             remainingTime = remaining
             reminderControl:SetHidden(false)
 
-            -- if HWRSV.toggleTimer then
-            --     --warningTimer:SetColor(0, 1, 0, 1) 
-            --     warningTimer:SetColor(
-            --         HWRSV.timerColor.r or 0,
-            --         HWRSV.timerColor.g or 1,
-            --         HWRSV.timerColor.b or 0,
-            --         HWRSV.timerColor.a or 1
-            --     )
-            --     warningTimer:SetText(string.format("%d", remaining))
-            -- else
-            --     warningTimer:SetText("")
-            --     remainingTime = 0
-            --     cdTimer = 0
-            -- end
---==================================================================================================================================
             if HWRSV.toggleTimer then
-                -- Timer color based on remaining time
-                if remaining > 50 then
-                    -- First 10 seconds: cooldown color
-                    if HWRSV.colorForFirst10sCooldown then
-                        warningTimer:SetColor(
-                            HWRSV.cooldownColor.r or 1,
-                            HWRSV.cooldownColor.g or 0.2,
-                            HWRSV.cooldownColor.b or 0.2,
-                            HWRSV.cooldownColor.a or 1
-                        )
-                    else
-                        warningTimer:SetColor(
-                        HWRSV.timerColor.r or 0,
-                        HWRSV.timerColor.g or 1,
-                        HWRSV.timerColor.b or 0,
-                        HWRSV.timerColor.a or 1
-                        )
-                    end    
-                    warningTimer:SetText(string.format("%d", remaining))
-                else
-                    -- After first 10 seconds: timer color with "can bash" if enabled (can bash)
+                --warningTimer:SetColor(0, 1, 0, 1) 
+                if HWRSV.colorForFirst10sCooldown then
                     warningTimer:SetColor(
-                        HWRSV.timerColor.r or 0,
-                        HWRSV.timerColor.g or 1,
-                        HWRSV.timerColor.b or 0,
-                        HWRSV.timerColor.a or 1
+                        HWRSV.cooldownColor.r,
+                        HWRSV.cooldownColor.g,
+                        HWRSV.cooldownColor.b,
+                        HWRSV.cooldownColor.a
                     )
-                    if HWRSV.enableCanBash then
-                        warningTimer:SetText(string.format("%d can bash", remaining))
-                    else
-                        warningTimer:SetText(string.format("%d", remaining))
-                    end
-                end
+                else
+                    warningTimer:SetColor(
+                    HWRSV.timerColor.r,
+                    HWRSV.timerColor.g,
+                    HWRSV.timerColor.b,
+                    HWRSV.timerColor.a
+                    )
+                end    
+                if HWRSV.enableCanBash and remainingTime <=50 then warningTimer:SetText(string.format("%d |cAAAAFF CAN BASH|r", remaining))
+                else warningTimer:SetText(string.format("%d", remaining)) end
             else
                 warningTimer:SetText("")
                 remainingTime = 0
                 cdTimer = 0
             end
---==================================================================================================================================
         elseif (isInCombat or HWRSV.showOutsideCombat) and remainingTime <=49 then
             remainingTime = 0
             cdTimer = 0
             reminderControl:SetHidden(false)
             -- warningTimer:SetColor(1, 1, 1, 1) 
             warningTimer:SetColor(
-                HWRSV.bashColor.r or 1,
-                HWRSV.bashColor.g or 1,
-                HWRSV.bashColor.b or 1,
-                HWRSV.bashColor.a or 1
+                HWRSV.bashColor.r,
+                HWRSV.bashColor.g,
+                HWRSV.bashColor.b,
+                HWRSV.bashColor.a
             )
             warningTimer:SetText("Bash")
             
@@ -584,10 +519,10 @@ local function CheckConditions()
             reminderControl:SetHidden(false)
             --warningTimer:SetColor(1, 0.2, 0.2, 1) 
             warningTimer:SetColor(
-                HWRSV.cooldownColor.r or 1,
-                HWRSV.cooldownColor.g or 0.2,
-                HWRSV.cooldownColor.b or 0.2,
-                HWRSV.cooldownColor.a or 1
+                HWRSV.cooldownColor.r,
+                HWRSV.cooldownColor.g,
+                HWRSV.cooldownColor.b,
+                HWRSV.cooldownColor.a
             )
             warningTimer:SetText(string.format("%d", cdTimer-0.2))
         else
@@ -696,15 +631,12 @@ end
 local function OnEffectChanged(_, changeType, _, effectName, unitTag, _, _, _, _, _, _, _, _, _, abilityId, _)
     if unitTag == "player" then
         Debug("Effect event: " .. (effectName or "Unknown") .. " (ID: " .. (abilityId or "nil") .. ") Change: " .. changeType)
-        
-        -- Check if this is our target buff
         if abilityId == HUNTSMAN_WARMASK_BUFF_ID then
             if changeType == EFFECT_RESULT_GAINED then
                 Debug("Huntsman Warmask buff activated - hiding warning.")
                 HideWarning()
             elseif changeType == EFFECT_RESULT_FADED then
                 Debug("Huntsman Warmask buff faded - checking conditions.")
-                -- Small delay to ensure the buff is completely removed
                 zo_callLater(CheckConditions, 100)
             end
         end
@@ -714,9 +646,7 @@ end
 local function OnBashEvent(_, result, _, abilityName, _, _, _, sourceType, targetName, _, _, _, _, _, _, _, abilityId)
     if remainingTime > 51 then return end
     if sourceType ~= COMBAT_UNIT_TYPE_PLAYER then return end
-
     if abilityId == 0 or abilityId == nil then return end
-    UpdateIconSize()
     local formattedTarget = targetName ~= "" and zo_strformat("<<1>>", targetName) or ""
     local formattedAbility = abilityName ~= "" and zo_strformat("<<1>>", abilityName) or ""
     lastBashedTargetName = formattedTarget
@@ -895,7 +825,7 @@ end
 local MenuPanel = "|cFF0000HuntsmanWarmask|rReminder"
 local MenuAuthors = "|cFFD700Vo|r|cF7D418l|r|cF3D324l|r|cEFD130s|r|cEBD03Ctä|r|cE3CD54n|r|cE0CC60d|r|cDCCA6Ci|r|cD8C978g|r|cD4C784e|r|cD0C690r|r|cCCC49CNa|r|cC4C1B4me|r & |cEE82EEO|r|cDD74ECr|r|cCD65EAo|r|cBC57E8l|r|cAB48E6l|r|c9B3AE4a|r|c8A2BE2s|r"
 local MenuWebsite = "https://github.com/VollstaendigerName"
-local MenuInfo = "HuntsmanWarmaskReminder alerts you when you're wearing the Huntsman War Mask in combat but missing its bonus buff."
+local MenuInfo = "HuntsmanWarmaskReminder reminds you to bash when you wear huntsman's warmask"
 -- =============================================================================
 -- == MAIN MENU CONSTRUCTION ===================================================
 -- =============================================================================
@@ -1076,7 +1006,7 @@ function HWR.BuildMenu(HWRSV)
                 {
                     type = "colorpicker",
                     name = COLOR.PRIMARY.."Cooldown timer color",
-                    tooltip = COLOR.SECONDARY.."Set the color for the cooldown timer",
+                    tooltip = COLOR.SECONDARY.."Set the color for the internal cooldown timer of Huntsman's Warmask, which prevents you from applying the debuff if you applied a debuff 10 seconds earlier.",
                     getFunc = function()
                         local c = HWRSV.cooldownColor or {r=1, g=0.2, b=0.2, a=1}
                         return c.r, c.g, c.b, c.a
@@ -1094,8 +1024,8 @@ function HWR.BuildMenu(HWRSV)
                     }
                 },
                 CreateCheckbox(
-                                "Cooldown color",
-                                "Changed the cooldown color, for the first 10s.",
+                                "HW cooldown color",
+                                "Indicates the internal cooldown of Huntsman's Warmask, which prevents you from applying the debuff if you applied a debuff 10 seconds earlier.",
                                 function() return HWRSV.colorForFirst10sCooldown  end,
                                 function(value) 
                                     HWRSV.colorForFirst10sCooldown = value
@@ -1113,7 +1043,7 @@ function HWR.BuildMenu(HWRSV)
                 },
                 CreateCheckbox(
                                 "Show target name below icon",
-                                "Displays the current target name below the warning icon.",
+                                "Displays the current target name below the icon.",
                                 function() return HWRSV.showTargetName end,
                                 function(value)
                                     HWRSV.showTargetName = value
@@ -1122,9 +1052,9 @@ function HWR.BuildMenu(HWRSV)
                                     end
                                 end
                             ),
-                CreateCheckbox(
-                                'Show can "bash"',
-                                "When enabled, shows 'can bash' in green text next to the debuff timer after the first 10 seconds (from 50s to 0s remaining).",
+                CreateCheckbox(--Still dunno who needs that
+                                "Show 'can bash' always next to the timer",
+                                "When enabled, shows 'can bash' next to the timer after the first 10 seconds.",
                                 function() return HWRSV.enableCanBash end,
                                 function(value) 
                                     HWRSV.enableCanBash = value
@@ -1143,18 +1073,18 @@ function HWR.BuildMenu(HWRSV)
                             ),
                 CreateCheckbox(
                                 "Show icon outside of combat",
-                                "Enable this option if you want to see the reminder outside of combat.",
+                                "Enable this option if you want to see the icon outside of combat.",
                                 function() return HWRSV.showOutsideCombat end,
                                 function(value) 
                                     HWRSV.showOutsideCombat = value
                                 end
                             ),
                 CreateCheckbox(
-                            "Horizontal layout",
-                            "When enabled, displays the icon on the left with timer/bash/can bash text to the right, and bashed target name below the text.",
-                            function() return HWRSV.horizontalLayout end,
+                            "Text on the right side of the icon",
+                            "When enabled, shows every text right to the icon instead of below.",
+                            function() return HWRSV.textRight end,
                             function(value)
-                                HWRSV.horizontalLayout = value
+                                HWRSV.textRight = value
                                 if HWR.UpdateIconSize then
                                     HWR.UpdateIconSize()
                                 end
@@ -1190,13 +1120,13 @@ function HWR.BuildMenu(HWRSV)
             controls = {
                 {
                     type = "dropdown",
-                    name = COLOR.PRIMARY.."Font Family",
-                    tooltip = COLOR.SECONDARY.."Select the font family to use for the addon text",
-                    choices = {"Univers67", "ProseAntiquePSMT"},
-                    choicesValues = {"Univers67", "ProseAntiquePSMT"},
-                    getFunc = function() return HWRSV.fontFamily or "Univers67" end,
+                    name = COLOR.PRIMARY.."Text Font",
+                    tooltip = COLOR.SECONDARY.."Select the font to use for the addon text",
+                    choices = {"Univers67", "ProseAntiquePSMT", "esocartographer-bold", "fontin_sans_b", "fontin_sans_i",  "fontin_sans_r", "arialn", "consola", "fontin_sans_sc", "Handwritten_Bold", "trajanpro-regular", "univers55", "univers57"},
+                    choicesValues = {"Univers67", "ProseAntiquePSMT", "esocartographer-bold", "fontin_sans_b", "fontin_sans_i",  "fontin_sans_r", "arialn", "consola", "fontin_sans_sc", "Handwritten_Bold", "trajanpro-regular", "univers55", "univers57"},
+                    getFunc = function() return HWRSV.textFont or "Univers67" end,
                     setFunc = function(value)
-                        HWRSV.fontFamily = value
+                        HWRSV.textFont = value
                         if HWR.UpdateFontSizes then
                             HWR.UpdateFontSizes()
                         end
@@ -1296,5 +1226,5 @@ end
     - EVENT_ADD_ON_LOADED handler for delayed initialization
 --]]
 EM:RegisterForEvent(NAME, EVENT_ADD_ON_LOADED, OnAddOnLoaded)
-SCENE_MANAGER:GetScene("hud"):RegisterCallback("StateChange", ContinuousUpdate) -- Thank you Duesentrieb <3
-SCENE_MANAGER:GetScene("hudui"):RegisterCallback("StateChange", sceneChange)
+SCENE_MANAGER:GetScene("hud"):RegisterCallback("StateChange", ContinuousUpdate) 
+SCENE_MANAGER:GetScene("hudui"):RegisterCallback("StateChange", sceneChange)-- Thank you Duesentrieb <3
