@@ -477,7 +477,7 @@ local function CheckConditions()
 
             if HWRSV.toggleTimer then
                 --warningTimer:SetColor(0, 1, 0, 1) 
-                if HWRSV.colorForFirst10sCooldown then
+                if HWRSV.colorForFirst10sCooldown  and remainingTime >50 then
                     warningTimer:SetColor(
                         HWRSV.cooldownColor.r,
                         HWRSV.cooldownColor.g,
