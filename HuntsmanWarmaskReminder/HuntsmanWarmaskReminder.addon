@@ -1,10 +1,11 @@
-## Title: |cFF0000HuntsmanWarmask|rReminder
-## APIVersion: 101048
-## Author: |cEBD03CVollständigerName|r & |c8A2BE2Orollas|r
-## Version: 2.0.2
+## Title: |cFF0000Huntsman Warmask|r Reminder
+## APIVersion: 101049
+## Author: |cEBD03CVollständigerName|r & |c8A2BE2Orollas|r & brainsnorkel
+## Version: 2.0.3
 ## SavedVariables: HuntsmanWarmaskReminderSV
 ## DependsOn: LibAddonMenu-2.0>=41
-## Description: Warns when Huntsman Warmask is equipped but bash-applied buff/debuff is missing in combat. Features customizable timer, warning display, and line-to-target visual aid. Usage: /hwr. Credits: Scene management by Duesentrieb. Line drawing based on BetterGuard by TheMrPancake, CrutchAlerts by Kyzeragon, and OdySupportIcons by Lamierina7.
+## Description: alerts you when you're wearing the Huntsman War Mask in combat but missing its buff.
+It is possible to switch between an icon that displays the uptime and simple text. Credits: Duesentrieb for help.
 
 HuntsmanWarmaskReminder.lua
 

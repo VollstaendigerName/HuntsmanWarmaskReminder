@@ -2,10 +2,10 @@
 -- === HuntsmanWarmaskReminder Core Logic (HuntsmanWarmaskReminder.lua)     ===
 -- =============================================================================
 --[[
-    AddOn Name:         HuntsmanWarmaskReminder
+    AddOn Name:         Huntsman Warmask Reminder
     Description:        Warns when Huntsman Warmask is equipped but buff is missing in combat
-    Version:            2.0.2
-    Author:             VollständigerName & Orollas
+    Version:            2.0.3
+    Author:             VollständigerName & Orollas & brainsnorkel
     Dependencies:       LibAddonMenu-2.0
 --]]
 -- =============================================================================
@@ -762,7 +762,7 @@ local LAM = LibAddonMenu2
 local COLOR = {
     PRIMARY    = "|cD4D4D4",   -- Main text
     SECONDARY  = "|cA6A6A6",   -- Secondary text
-    ACCENT     = "|c948159",   -- Gold accent
+    ACCENT     = "|cFF0000",   -- Red accent
     WARNING    = "|cFF5555",   -- Warnings
     DISABLED   = "|c666666",   -- Disabled
     BORDER     = "|c3C3C3C"    -- Borders
@@ -822,10 +822,10 @@ end
 -- @param text: Display text for section header
 -- @return: Divider and description control pair
 --------------------------------------------------------------------------------
-local MenuPanel = "|cFF0000HuntsmanWarmask|rReminder"
-local MenuAuthors = "|cFFD700Vo|r|cF7D418l|r|cF3D324l|r|cEFD130s|r|cEBD03Ctä|r|cE3CD54n|r|cE0CC60d|r|cDCCA6Ci|r|cD8C978g|r|cD4C784e|r|cD0C690r|r|cCCC49CNa|r|cC4C1B4me|r & |cEE82EEO|r|cDD74ECr|r|cCD65EAo|r|cBC57E8l|r|cAB48E6l|r|c9B3AE4a|r|c8A2BE2s|r"
+local MenuPanel = "|cFF0000Huntsman Warmask|r Reminder"
+local MenuAuthors = "|cFFD700Vo|r|cF7D418l|r|cF3D324l|r|cEFD130s|r|cEBD03Ctä|r|cE3CD54n|r|cE0CC60d|r|cDCCA6Ci|r|cD8C978g|r|cD4C784e|r|cD0C690r|r|cCCC49CNa|r|cC4C1B4me|r & |cEE82EEO|r|cDD74ECr|r|cCD65EAo|r|cBC57E8l|r|cAB48E6l|r|c9B3AE4a|r|c8A2BE2s|r & brainsnorkel"
 local MenuWebsite = "https://github.com/VollstaendigerName"
-local MenuInfo = "HuntsmanWarmaskReminder reminds you to bash when you wear huntsman's warmask"
+local MenuInfo = "Huntsman Warmask Reminder reminds you to bash when you wear huntsman's warmask"
 -- =============================================================================
 -- == MAIN MENU CONSTRUCTION ===================================================
 -- =============================================================================
@@ -1171,6 +1171,8 @@ local function Initialize()
     
     -- Create warning UI
     CreateWarningUI()
+    SCENE_MANAGER:GetScene("hud"):RegisterCallback("StateChange", ContinuousUpdate)
+    SCENE_MANAGER:GetScene("hudui"):RegisterCallback("StateChange", sceneChange)
     EM:RegisterForEvent(NAME, EVENT_COMBAT_EVENT, OnBashEvent)
     EM:AddFilterForEvent(NAME, EVENT_COMBAT_EVENT, REGISTER_FILTER_ABILITY_ID, 21970)
 
@@ -1213,7 +1215,9 @@ local function OnAddOnLoaded(event, addonName)
 end
 
 function sceneChange(_, scene) -- Thank you Duesentrieb <3
-    reminderControl:SetHidden(true)
+    if reminderControl then
+        reminderControl:SetHidden(true)
+    end
 end
 
 
@@ -1226,5 +1230,5 @@ end
     - EVENT_ADD_ON_LOADED handler for delayed initialization
 --]]
 EM:RegisterForEvent(NAME, EVENT_ADD_ON_LOADED, OnAddOnLoaded)
-SCENE_MANAGER:GetScene("hud"):RegisterCallback("StateChange", ContinuousUpdate) 
-SCENE_MANAGER:GetScene("hudui"):RegisterCallback("StateChange", sceneChange)-- Thank you Duesentrieb <3
+-- SCENE_MANAGER:GetScene("hud"):RegisterCallback("StateChange", ContinuousUpdate) 
+-- SCENE_MANAGER:GetScene("hudui"):RegisterCallback("StateChange", sceneChange)-- Thank you Duesentrieb <3
