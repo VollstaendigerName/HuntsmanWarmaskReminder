@@ -1,14 +1,15 @@
 ## Title: |cFF0000Huntsman Warmask|r Reminder
-## APIVersion: 101049
+## APIVersion: 101049 101050
 ## Author: |cEBD03CVollständigerName|r & |c8A2BE2Orollas|r & brainsnorkel
-## Version: 2.0.3
+## Version: 2.0.4
 ## SavedVariables: HuntsmanWarmaskReminderSV
-## DependsOn: LibAddonMenu-2.0>=41
+## DependsOn: LibAddonMenu-2.0>=43
 ## Description: alerts you when you're wearing the Huntsman War Mask in combat but missing its buff.
 It is possible to switch between an icon that displays the uptime and simple text. Credits: Duesentrieb for help.
 
 HuntsmanWarmaskReminder.lua
 
-## Notes: This add-on is not created by, affiliated with, or supported by ZeniMax Media Inc.
-##        The Elder Scrolls® and related logos are registered trademarks or trademarks
-##        of ZeniMax Media Inc. in the United States and/or other countries. All rights reserved.
+; Notes: This add-on is not created by, affiliated with, or supported by ZeniMax Media Inc. 
+;        The Elder Scrolls® and related logos are registered trademarks or trademarks 
+;        of ZeniMax Media Inc. in the United States and/or other countries. All rights reserved.
+; 	 You can read the full terms at https://account.elderscrollsonline.com/add-on-terms

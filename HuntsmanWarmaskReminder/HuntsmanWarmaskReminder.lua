@@ -4,7 +4,7 @@
 --[[
     AddOn Name:         Huntsman Warmask Reminder
     Description:        Warns when Huntsman Warmask is equipped but buff is missing in combat
-    Version:            2.0.3
+    Version:            2.0.4
     Author:             VollständigerName & Orollas & brainsnorkel
     Dependencies:       LibAddonMenu-2.0
 --]]
@@ -30,7 +30,7 @@
 --]]
 local HuntsmanWarmaskReminder = {
     name = "HuntsmanWarmaskReminder",
-    version = "2.0.2",
+    version = "2.0.4",
     settings = {
         enabled = true,  -- Default: reminder enabled
         debugMode = false,  -- Default: debug disabled
@@ -243,7 +243,6 @@ local function UpdateIconSize()
         local iconSize = HWRSV.iconSize or 100
         local iconDimensions = (iconSize / 100) * 80
         
-
         reminderControl:SetDimensions(iconDimensions + 40, iconDimensions + 40)
         
         warningIcon:SetDimensions(iconDimensions, iconDimensions)
@@ -264,7 +263,7 @@ end
 HWR.UpdateIconSize = UpdateIconSize
 
 -- =============================================================================
--- == UpdateTargetName ==============================================
+-- == UpdateTargetName =========================================================
 -- =============================================================================
 --[[
     Function: UpdateTargetName
@@ -277,7 +276,7 @@ local function UpdateTargetName()
     if not targetNameLabel then return end
 
     if HWRSV.showTargetName and isInCombat then
-        targetNameLabel:SetText(lastBashedTargetName )
+        targetNameLabel:SetText(lastBashedTargetName)
         targetNameLabel:SetHidden(false)
     else
         lastBashedTargetName = ""
@@ -647,7 +646,9 @@ local function OnBashEvent(_, result, _, abilityName, _, _, _, sourceType, targe
     if remainingTime > 51 then return end
     if sourceType ~= COMBAT_UNIT_TYPE_PLAYER then return end
     if abilityId == 0 or abilityId == nil then return end
-    local formattedTarget = targetName ~= "" and zo_strformat("<<1>>", targetName) or ""
+    local formattedTarget = GetUnitName('reticleover') or ((targetName ~= "" and zo_strformat("<<1>>", targetName))) and not (GetUnitName('player'))
+    -- d(GetUnitName('reticleover'))
+    -- d(((targetName ~= "" and zo_strformat("<<1>>", targetName))))
     local formattedAbility = abilityName ~= "" and zo_strformat("<<1>>", abilityName) or ""
     lastBashedTargetName = formattedTarget
     Debug(string.format(
