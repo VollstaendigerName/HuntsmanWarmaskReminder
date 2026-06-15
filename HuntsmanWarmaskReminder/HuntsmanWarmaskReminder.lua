@@ -4,33 +4,18 @@
 --[[
     AddOn Name:         Huntsman Warmask Reminder
     Description:        Warns when Huntsman Warmask is equipped but buff is missing in combat
-    Version:            2.0.4
+    Version:            2.0.5
     Author:             VollständigerName & Orollas & brainsnorkel
     Dependencies:       LibAddonMenu-2.0
 --]]
--- =============================================================================
---[[
-    SYSTEM ARCHITECTURE:
-    - Combat State Monitoring
-    - Equipment Change Detection  
-    - Buff Status Tracking
-    - Visual Warning System
-    - Settings Persistence
---]]
--- =============================================================================
+
 
 -- =============================================================================
 -- == GLOBAL ADDON DEFINITION & VERSION CONTROL ================================
 -- =============================================================================
---[[
-    Purpose: Establishes fundamental addon identity and configuration
-    Contains:
-    - Addon metadata for ESO client recognition
-    - Default settings configuration
---]]
 local HuntsmanWarmaskReminder = {
     name = "HuntsmanWarmaskReminder",
-    version = "2.0.4",
+    version = "2.0.5",
     settings = {
         enabled = true,  -- Default: reminder enabled
         debugMode = false,  -- Default: debug disabled
@@ -50,24 +35,18 @@ local HuntsmanWarmaskReminder = {
             point = CENTER,
             relativeTo = GuiRoot,
             relativePoint = CENTER,
-            x = 128, y = 128 },
+            x = 128, y = 128 
         },
         colorForFirst10sCooldown = true,
         enableCanBash = false,
         textFont = "Univers67",
         textRight = false, -- Use horizontal layout (icon left, text right)
+        },
 }
 
 -- =============================================================================
 -- == LOCALIZED ALIASES & RUNTIME REFERENCES ===================================
 -- =============================================================================
---[[
-    Purpose: Optimizes frequent access patterns and reduces overhead
-    Contains:
-    - Localized addon namespace reference
-    - Cached event manager reference
-    - Constant definitions
---]]
 local HWR = HuntsmanWarmaskReminder or {}
 local NAME = HWR.name
 local EM = EVENT_MANAGER
@@ -98,11 +77,7 @@ local targetNameLabel
 -- == DEBUG UTILITY FUNCTIONS ==================================================
 -- =============================================================================
 --[[
-    Function: Debug
     Purpose: Conditional debug output based on settings
-    Process Flow:
-      1. Checks debug mode setting
-      2. Outputs formatted debug message if enabled
 --]]
 local function Debug(message)
     if HWRSV.debugMode then
@@ -114,7 +89,6 @@ end
 -- == FONT HELPER FUNCTIONS ====================================================
 -- =============================================================================
 --[[
-    Function: GetTimerFont
     Purpose: Returns formatted font string for timer text
 --]]
 local fontPaths = {
@@ -148,7 +122,6 @@ local function GetTargetNameFont()
 end
 
 --[[
-    Function: GetWarningFont
     Purpose: Returns formatted font string for warning text
 --]]
 local function GetWarningFont()
@@ -162,14 +135,31 @@ end
 -- == WARNING UI SUBSYSTEM =====================================================
 -- =============================================================================
 --[[
-    Function: CreateWarningUI
     Purpose: Creates the visual warning display
-    Process Flow:
-      1. Creates top-level warning container
-      2. Sets dimensions and positioning
-      3. Creates warning text label
-      4. Applies styling and formatting
 --]]
+
+local function UpdateIconSize()
+    if reminderControl and warningIcon then
+        local iconSize = HWRSV.iconSize or 100
+        local iconDimensions = (iconSize / 100) * 80
+        
+        reminderControl:SetDimensions(iconDimensions + 40, iconDimensions + 40)
+        
+        warningIcon:SetDimensions(iconDimensions, iconDimensions)
+        
+        warningTimer:SetAnchor(CENTER, reminderControl, CENTER, 0, iconDimensions/2 + 10)
+        warningTimer:ClearAnchors()
+        if HWRSV.textRight then
+                warningTimer:SetAnchor(LEFT, warningIcon, RIGHT, 10, 0)
+            else 
+                warningTimer:SetAnchor(CENTER, reminderControl, CENTER, 0, iconDimensions/2 + 10)
+            end
+            
+            Debug("Icon size updated to: " .. iconSize .. "% (" .. iconDimensions .. "px)")
+        end
+    end
+HWR.UpdateIconSize = UpdateIconSize
+
 local function CreateWarningUI()
     Debug("Creating warning UI...")
     
@@ -234,43 +224,16 @@ local function CreateWarningUI()
     targetNameLabel:SetText("")
     targetNameLabel:SetHidden(true)
 
-    
+    HWR.UpdateIconSize()
     Debug("Warning UI created.")
 end
 
-local function UpdateIconSize()
-    if reminderControl and warningIcon then
-        local iconSize = HWRSV.iconSize or 100
-        local iconDimensions = (iconSize / 100) * 80
-        
-        reminderControl:SetDimensions(iconDimensions + 40, iconDimensions + 40)
-        
-        warningIcon:SetDimensions(iconDimensions, iconDimensions)
-        
-        warningTimer:SetAnchor(CENTER, reminderControl, CENTER, 0, iconDimensions/2 + 10)
-        warningTimer:ClearAnchors()
-        if HWRSV.textRight then
-             warningTimer:SetAnchor(LEFT, warningIcon, RIGHT, 10, 0)
-        else 
-            warningTimer:SetAnchor(CENTER, reminderControl, CENTER, 0, iconDimensions/2 + 10)
-        end
-        
-        Debug("Icon size updated to: " .. iconSize .. "% (" .. iconDimensions .. "px)")
-    end
-end
-
-
-HWR.UpdateIconSize = UpdateIconSize
 
 -- =============================================================================
 -- == UpdateTargetName =========================================================
 -- =============================================================================
 --[[
-    Function: UpdateTargetName
     Purpose: Sets the target name below the icon to true or false
-    Process Flow:
-      1. Checks the current label
-      2. Set ui element true or false
 --]]
 local function UpdateTargetName()
     if not targetNameLabel then return end
@@ -296,7 +259,6 @@ HWR.UpdateTargetNameVisibility = UpdateTargetNameVisibility
 -- == FONT SIZE UPDATE FUNCTION ================================================
 -- =============================================================================
 --[[
-    Function: UpdateFontSizes
     Purpose: Updates font sizes for timer and warning text
 --]]
 local function UpdateFontSizes()
@@ -326,11 +288,7 @@ HWR.UpdateFontSizes = UpdateFontSizes
 -- == WARNING VISIBILITY CONTROL ===============================================
 -- =============================================================================
 --[[
-    Function: ShowWarning
     Purpose: Displays the warning UI
-    Process Flow:
-      1. Checks if control exists
-      2. Makes control visible with full opacity
 --]]
 local function ShowWarning()
     if reminderControl then
@@ -343,11 +301,7 @@ local function ShowWarning()
 end
 
 --[[
-    Function: HideWarning
     Purpose: Hides the warning UI
-    Process Flow:
-      1. Checks if control exists
-      2. Hides the control
 --]]
 local function HideWarning()
     if reminderControlWarning then
@@ -368,12 +322,7 @@ end
 -- == EQUIPMENT CHECK SUBSYSTEM ================================================
 -- =============================================================================
 --[[
-    Function: CheckWarmaskEquipped
     Purpose: Checks if Huntsman Warmask is currently equipped
-    Process Flow:
-      1. Gets current helmet item ID
-      2. Compares with target item ID
-      3. Updates hasWarmaskEquipped variable
 --]]
 local function CheckWarmaskEquipped()
     local currentHelmId = GetItemId(BAG_WORN, EQUIP_SLOT_HEAD)
@@ -386,12 +335,7 @@ end
 -- == BUFF DETECTION SUBSYSTEM =================================================
 -- =============================================================================
 --[[
-    Function: HasBuff
     Purpose: Checks if Huntsman Warmask buff is active
-    Process Flow:
-      1. Iterates through all player buffs
-      2. Compares ability IDs with target buff ID
-      3. Returns true if buff is found
 --]]
 local function HasBuff()
     for i = 1, GetNumBuffs("player") do
@@ -409,20 +353,12 @@ end
 -- == CORE LOGIC: CONDITION CHECKING ===========================================
 -- =============================================================================
 --[[
-    Function: CheckConditions
     Purpose: Evaluates all conditions for showing reminder
-    Process Flow:
-      1. Checks if addon is enabled
-      2. Verifies correct helmet is equipped
-      3. Confirms combat state
-      4. Checks buff status
-      5. Validates cooldown period
-      6. Shows warning if all conditions met
 --]]
 local function CheckConditions()
     Debug("Checking conditions...")
     local _, point, relativeTo, relativePoint, UserX, UserY = reminderControl:GetAnchor()
-    if UserX ~= HWRSV.position.x or UserY ~= HWRSV.position.y then
+    if not HWRSV.LockPosition and (UserX ~= HWRSV.position.x or UserY ~= HWRSV.position.y) then
         HWRSV.position.point = point
         HWRSV.position.relativeTo = relativeTo
         HWRSV.position.relativePoint = relativePoint
@@ -554,12 +490,7 @@ end
 -- == CONTINUOUS MONITORING SUBSYSTEM ==========================================
 -- =============================================================================
 --[[
-    Function: ContinuousUpdate
     Purpose: Periodically checks conditions to ensure state consistency
-    Process Flow:
-      1. Runs every 250ms when conditions might be active
-      2. Only checks when addon is enabled and in combat
-      3. Maintains consistent state monitoring
 --]]
 local function ContinuousUpdate()
     if HWRSV.showOutsideCombat or (HWRSV.enabled and isInCombat and hasWarmaskEquipped) then
@@ -574,12 +505,7 @@ end
 -- == EVENT HANDLER SUBSYSTEM ==================================================
 -- =============================================================================
 --[[
-    Function: OnCombatState
     Purpose: Handles combat state changes
-    Process Flow:
-      1. Updates combat state variable
-      2. Hides warning when leaving combat
-      3. Checks conditions when entering combat
 --]]
 local function OnCombatState(eventCode, inCombat)
     isInCombat = inCombat
@@ -595,12 +521,7 @@ local function OnCombatState(eventCode, inCombat)
 end
 
 --[[
-    Function: OnEquipmentChanged
     Purpose: Handles equipment changes
-    Process Flow:
-      1. Filters for head slot changes only
-      2. Logs equipment changes for debugging
-      3. Triggers immediate condition check
 --]]
 local function OnEquipmentChanged(_, _, slotId, _, _, _, _)
     if slotId == EQUIP_SLOT_HEAD then
@@ -620,12 +541,7 @@ local function OnEquipmentChanged(_, _, slotId, _, _, _, _)
 end
 
 --[[
-    Function: OnEffectChanged
     Purpose: Handles buff/debuff changes
-    Process Flow:
-      1. Filters for player effects only
-      2. Hides warning when target buff is gained
-      3. Checks conditions when buff fades
 --]]
 local function OnEffectChanged(_, changeType, _, effectName, unitTag, _, _, _, _, _, _, _, _, _, abilityId, _)
     if unitTag == "player" then
@@ -666,11 +582,7 @@ end
 -- == SLASH COMMAND IMPLEMENTATION =============================================
 -- =============================================================================
 --[[
-    Function: Slash Command Handler
     Purpose: Provides user interaction via chat commands
-    Process Flow:
-      1. Toggles enabled setting when /huntsmanwarmaskreminder is called
-      2. Provides visual feedback in chat
 --]]
 SLASH_COMMANDS["/huntsmanwarmaskreminder"] = function()
     HWRSV.enabled = not HWRSV.enabled
@@ -1025,7 +937,7 @@ function HWR.BuildMenu(HWRSV)
                     }
                 },
                 CreateCheckbox(
-                                "HW cooldown color",
+                                "Cooldown color",
                                 "Indicates the internal cooldown of Huntsman's Warmask, which prevents you from applying the debuff if you applied a debuff 10 seconds earlier.",
                                 function() return HWRSV.colorForFirst10sCooldown  end,
                                 function(value) 
@@ -1143,8 +1055,8 @@ function HWR.BuildMenu(HWRSV)
                 }
             }
         }
-            }        
-
+    }        
+    
     LAM:RegisterOptionControls(HWR.name.."Menu", options)
 end
 
@@ -1152,18 +1064,16 @@ end
 -- === END OF MENU SYSTEM ======================================================
 -- =============================================================================        
 
+local function sceneChange(_, scene) -- Thank you Duesentrieb <3
+    if reminderControl then
+        reminderControl:SetHidden(true)
+    end
+end
 -- =============================================================================
 -- == ADDON INITIALIZATION =====================================================
 -- =============================================================================
 --[[
-    Function: HWR.Initialize
     Purpose: Performs addon initialization routines
-    Process Flow:
-      1. Initializes SavedVariables
-      2. Creates warning UI elements
-      3. Registers event handlers with filters
-      4. Sets up continuous monitoring
-      5. Performs initial condition check
 --]]
 local function Initialize()
     -- SavedVariables initialization
@@ -1201,12 +1111,7 @@ end
 -- == EVENT HANDLER: ADDON LOADED ==============================================
 -- =============================================================================
 --[[
-    Function: OnAddOnLoaded
     Purpose: Handles the EVENT_ADD_ON_LOADED event to initialize the addon
-    Process Flow:
-      1. Checks if the loaded addon is our own
-      2. Unregisters event handler after successful initialization
-      3. Performs addon initialization
 --]]
 local function OnAddOnLoaded(event, addonName)
     if addonName == NAME then
@@ -1215,21 +1120,11 @@ local function OnAddOnLoaded(event, addonName)
     end
 end
 
-function sceneChange(_, scene) -- Thank you Duesentrieb <3
-    if reminderControl then
-        reminderControl:SetHidden(true)
-    end
-end
 
 
 -- =============================================================================
 -- == EVENT REGISTRATION =======================================================
 -- =============================================================================
---[[
-    Purpose: Registers necessary event handlers for addon operation
-    Contains:
-    - EVENT_ADD_ON_LOADED handler for delayed initialization
---]]
 EM:RegisterForEvent(NAME, EVENT_ADD_ON_LOADED, OnAddOnLoaded)
 -- SCENE_MANAGER:GetScene("hud"):RegisterCallback("StateChange", ContinuousUpdate) 
 -- SCENE_MANAGER:GetScene("hudui"):RegisterCallback("StateChange", sceneChange)-- Thank you Duesentrieb <3

@@ -1,11 +1,10 @@
 ## Title: |cFF0000Huntsman Warmask|r Reminder
-## APIVersion: 101049 101050
+## APIVersion: 101050
 ## Author: |cEBD03CVollständigerName|r & |c8A2BE2Orollas|r & brainsnorkel
-## Version: 2.0.4
+## Version: 2.0.5
 ## SavedVariables: HuntsmanWarmaskReminderSV
 ## DependsOn: LibAddonMenu-2.0>=43
-## Description: alerts you when you're wearing the Huntsman War Mask in combat but missing its buff.
-It is possible to switch between an icon that displays the uptime and simple text. Credits: Duesentrieb for help.
+## Description: Alerts you when you're wearing the Huntsman War Mask in combat but missing its buff. It is possible to switch between an icon that displays the uptime and simple text. Credits: Duesentrieb for help.
 
 HuntsmanWarmaskReminder.lua
 
